@@ -1,0 +1,50 @@
+import type { Config } from 'tailwindcss'
+
+export default {
+  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        'surface':                   '#131313',
+        'surface-dim':               '#131313',
+        'surface-bright':            '#393939',
+        'surface-container-lowest':  '#0e0e0e',
+        'surface-container-low':     '#1b1b1b',
+        'surface-container':         '#1f1f1f',
+        'surface-container-high':    '#2a2a2a',
+        'surface-container-highest': '#353535',
+        'surface-variant':           '#353535',
+        'background':                '#131313',
+        'on-background':             '#e2e2e2',
+        'on-surface':                '#e2e2e2',
+        'on-surface-variant':        '#c6c6c6',
+        'primary':                   '#ffffff',
+        'primary-container':         '#d4d4d4',
+        'on-primary':                '#1a1c1c',
+        'secondary':                 '#c7c6c6',
+        'secondary-container':       '#464747',
+        'on-secondary-container':    '#e3e2e2',
+        'tertiary':                  '#e4e2e1',
+        'error':                     '#ffb4ab',
+        'error-container':           '#93000a',
+        'outline':                   '#919191',
+        'outline-variant':           '#474747',
+        'inverse-surface':           '#e2e2e2',
+        'inverse-on-surface':        '#303030',
+      },
+      fontFamily: {
+        headline: ['Newsreader', 'serif'],
+        body:     ['Space Grotesk', 'sans-serif'],
+        label:    ['Space Grotesk', 'sans-serif'],
+      },
+      borderRadius: {
+        DEFAULT: '0px',
+        lg:      '0px',
+        xl:      '0px',
+        full:    '9999px',
+      },
+    },
+  },
+  plugins: [],
+} satisfies Config

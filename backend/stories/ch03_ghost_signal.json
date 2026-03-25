@@ -1,0 +1,36 @@
+{
+  "id": "ch03_ghost_signal",
+  "chapter": 3,
+  "title": "Archive #0301-UNKNOWN | Ghost Signal",
+  "description": "A transmission log with a broken identity chain. The sender is referenced before being established.",
+  "bug_type": "identity_reference",
+  "initial_tags": [
+    "channel_open",
+    "location_relay_station",
+    "signal_incoming"
+  ],
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Signal Detected",
+      "text": "Timestamp: 2157-11-30 04:03:17\nRelay Station DELTA-4 detected an unregistered inbound signal.\nChannel status: OPEN. Source identifier: UNKNOWN.\nSignal strength: 94%. Decryption layer: ACTIVE.",
+      "requires": [],
+      "provides": ["channel_open", "location_relay_station", "signal_incoming"]
+    },
+    {
+      "id": "evt_001",
+      "label": "Transmission Received",
+      "text": "He confirmed receipt of the coordinates and acknowledged the extraction window.\nThe message was signed with a Nexus-7 clearance cipher.\nTransmission logged. Channel still open.",
+      "requires": ["channel_open", "entity_sender_identified"],
+      "provides": ["coordinates_received", "extraction_acknowledged"],
+      "_bug_note": "entity_sender_identified is never established -- 'He' is referenced with no prior identification"
+    },
+    {
+      "id": "evt_002",
+      "label": "Channel Closed",
+      "text": "Transmission complete. Channel handshake terminated by remote party.\nCoordinates committed to navigation buffer.\nRelay Station DELTA-4 returned to standby mode.",
+      "requires": ["coordinates_received", "channel_open"],
+      "provides": ["channel_closed", "nav_buffer_loaded"]
+    }
+  ]
+}

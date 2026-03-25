@@ -1,0 +1,37 @@
+{
+  "id": "ch01_data_heist",
+  "chapter": 1,
+  "title": "Archive #0047-CHEN | Data Heist Incident Reconstruction",
+  "description": "A corrupted archive record. Event nodes contain a causal gap that must be patched.",
+  "bug_type": "causal_absence",
+  "initial_tags": [
+    "entity_chen",
+    "location_lab7",
+    "door_locked",
+    "storage_mounted"
+  ],
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Initialization",
+      "text": "Timestamp: 2157-03-15 02:47:03\nEntity[Dr. Chen] positioned at memory block[Lab 7]. Biometric auth: PASSED.\nPortable storage unit: MOUNTED. Server core access control: ACTIVE.\nDoor lock status: ENGAGED. Target memory block[Server Core]: awaiting entry.",
+      "requires": [],
+      "provides": ["entity_chen", "location_lab7", "door_locked", "storage_mounted"]
+    },
+    {
+      "id": "evt_001",
+      "label": "Core Breach",
+      "text": "Dr. Chen crossed the corridor and reached the server core blast door.\nThe door scanner emitted a low tone -- the blast door slid open.\nShe entered the core, initiated the data extraction process, wrote the classified\ndata to the storage unit in full, then retraced her steps.",
+      "requires": ["entity_chen", "storage_mounted", "access_keycard"],
+      "provides": ["data_downloaded", "door_entered"],
+      "_bug_note": "access_keycard is never provided -- causal absence"
+    },
+    {
+      "id": "evt_002",
+      "label": "Extraction",
+      "text": "Data secured. Dr. Chen moved quickly toward the emergency exit.\nThe moment the final blast door sealed behind her, the alarm system triggered.\nThe investigation unit arrived three minutes after her departure.\nAll that remained was an empty data slot.\nArchive compile endpoint. Status: ESCAPED.",
+      "requires": ["data_downloaded", "entity_chen"],
+      "provides": ["mission_complete", "escaped"]
+    }
+  ]
+}

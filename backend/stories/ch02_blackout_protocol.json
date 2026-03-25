@@ -1,0 +1,44 @@
+{
+  "id": "ch02_blackout_protocol",
+  "chapter": 2,
+  "title": "Archive #0112-REYES | Blackout Protocol",
+  "description": "A fragmented incident log from Sector 9. An action occurs before its triggering condition exists.",
+  "bug_type": "causal_absence",
+  "initial_tags": [
+    "entity_reyes",
+    "location_sector9",
+    "grid_online",
+    "terminal_active"
+  ],
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Station Log",
+      "text": "Timestamp: 2157-08-02 23:11:44\nEntity[Dr. Reyes] on duty at memory block[Sector 9 Control Station].\nPower grid status: NOMINAL. Terminal access: AUTHENTICATED.\nRestricted file partition [VAULT-9]: LOCKED.",
+      "requires": [],
+      "provides": ["entity_reyes", "location_sector9", "grid_online", "terminal_active"]
+    },
+    {
+      "id": "evt_001",
+      "label": "Generator Override",
+      "text": "Dr. Reyes moved to the auxiliary panel and manually activated the emergency generator.\nBackup systems came online. Primary grid handoff: COMPLETE.\nGenerator status: RUNNING.",
+      "requires": ["entity_reyes", "power_failure"],
+      "provides": ["generator_active", "backup_power"],
+      "_bug_note": "power_failure is never established -- there is no reason to activate the generator"
+    },
+    {
+      "id": "evt_002",
+      "label": "Vault Access",
+      "text": "With backup power routing through the auxiliary bus, the VAULT-9 partition\nfailed to re-authenticate its lock sequence.\nDr. Reyes accessed the unrestricted partition and copied restricted files.",
+      "requires": ["entity_reyes", "backup_power", "terminal_active"],
+      "provides": ["vault_accessed", "files_copied"]
+    },
+    {
+      "id": "evt_003",
+      "label": "Incident Logged",
+      "text": "Security subsystem recorded an unauthorized partition access at 23:14:02.\nEntity[Dr. Reyes] flagged for review.\nArchive compile endpoint. Status: INCIDENT LOGGED.",
+      "requires": ["files_copied", "entity_reyes"],
+      "provides": ["incident_recorded"]
+    }
+  ]
+}
