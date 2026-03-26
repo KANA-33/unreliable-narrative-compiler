@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 
 LOG_FILE = Path(__file__).parent.parent / "logs" / "game_log.jsonl"
+LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
 class GameLogger:
