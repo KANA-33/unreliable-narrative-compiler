@@ -1,0 +1,158 @@
+{
+  "_TEMPLATE_README": [
+    "=====================================================================",
+    "  Unreliable Narrative Compiler — Story File Authoring Template (EN)",
+    "  How to use: copy this file, rename it to chXX_your_title.json,",
+    "  then fill in the fields below.",
+    "  All fields prefixed with _ (e.g. _bug_note, _TEMPLATE_README) are",
+    "  author-only annotations. The engine ignores them at runtime.",
+    "=====================================================================",
+    "",
+    "[File Naming Convention]",
+    "  chXX_short_title.json",
+    "  Example: ch04_silent_witness.json",
+    "",
+    "[Recommended Authoring Order]",
+    "  1. Design the tag causal chain first (no narrative text yet).",
+    "     Wire up provides → requires across all events and verify it compiles clean.",
+    "  2. Decide where to 'break' the chain:",
+    "     Either remove a provides entry, or make a requires reference a tag",
+    "     that no earlier node ever provides.",
+    "  3. Confirm a valid solution exists:",
+    "     Identify exactly which insert or replace operation a player could use",
+    "     to restore the broken link.",
+    "  4. Write the narrative text for each event node.",
+    "  5. Fill in _bug_note and _solution_hint for your own reference.",
+    "",
+    "[Tag Naming Conventions — Recommended for Consistency]",
+    "  entity_xxx      — a character is present / involved, e.g. entity_chen",
+    "  location_xxx    — scene or physical location,       e.g. location_lab7",
+    "  object_xxx      — a key item or device,             e.g. object_keycard",
+    "  state_xxx       — system or equipment status,       e.g. state_door_open",
+    "  action_xxx      — a process has been completed,     e.g. action_data_copied",
+    "  event_xxx       — an incident has occurred,         e.g. event_alarm_triggered",
+    "  Free naming is allowed — the only rule is that the string in provides",
+    "  must exactly match the string in requires (case-sensitive)."
+  ],
+
+  "_FIELD_GUIDE": {
+    "id":           "Unique chapter identifier. Must match the filename without .json.",
+    "chapter":      "Chapter number (integer). Controls display order in the chapter selector.",
+    "title":        "Title shown in the game UI. Suggested format: Archive #XXXX-NAME | Subtitle",
+    "description":  "One-sentence summary shown on the chapter select screen. Hint at the inconsistency — do NOT reveal the answer.",
+    "bug_type":     "Fixed value for the Demo build: causal_absence",
+    "initial_tags": "Tags that exist at game start, before any event runs. evt_000's provides should mirror this list exactly. evt_000 itself has an empty requires.",
+    "events":       "Ordered array of event nodes. The engine processes them sequentially."
+  },
+
+  "_EVENT_FIELD_GUIDE": {
+    "id":             "Node ID. Format: evt_000, evt_001, evt_002 ... Must be unique.",
+    "label":          "Short node title shown on the Event Graph. Keep it 2-4 words.",
+    "text":           "Narrative body text shown in the Timeline panel. Use \\n for line breaks.",
+    "requires":       "Tags that must already be in the pool before this node can execute. Use [] for no prerequisites.",
+    "provides":       "Tags added to the pool after this node executes. Use [] if the node produces no new state.",
+    "_bug_note":      "(Optional) Author note: what bug is embedded here and why it causes an error.",
+    "_solution_hint": "(Optional) Author note: what patch operation the player should submit to fix it."
+  },
+
+  "id": "chXX_your_title",
+  "chapter": 99,
+  "title": "Archive #XXXX-NAME | Your Subtitle Here",
+  "description": "One sentence: what incident does this archive record, and what logical inconsistency is buried in it? (Do not reveal the answer.)",
+  "bug_type": "causal_absence",
+
+  "initial_tags": [
+    "entity_protagonist",
+    "location_start",
+    "_comment_initial_tags: list the tags that exist at game start. Remove this line before shipping."
+  ],
+
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Initialization",
+      "text": "Timestamp: 2157-XX-XX XX:XX:XX\nWrite the opening context here: who is present, what is the equipment status, what is the objective.\nMaintain a cold, terminal-log tone.",
+      "requires": [],
+      "provides": [
+        "entity_protagonist",
+        "location_start",
+        "_comment: evt_000 provides should match initial_tags exactly — this node acts as the initialization handshake."
+      ]
+    },
+
+    {
+      "_comment": "——— NORMAL NODE EXAMPLE (causal chain intact) ———",
+      "id": "evt_001",
+      "label": "Normal Step",
+      "text": "Describe a process or action that occurs normally.\nAll tags in requires were already provided by evt_000, so the causal chain is intact here.",
+      "requires": [
+        "entity_protagonist",
+        "location_start"
+      ],
+      "provides": [
+        "action_step_done",
+        "state_something_changed"
+      ]
+    },
+
+    {
+      "_comment": "——— BUG NODE EXAMPLE (embed the causal break here) ———",
+      "id": "evt_002",
+      "label": "Broken Step",
+      "text": "Describe an event where the outcome has already happened, but its triggering condition was never established.\nThe narrative reads as plausible, but one tag in requires has never been provided by any earlier node.",
+      "requires": [
+        "action_step_done",
+        "MISSING_TAG_THAT_NOBODY_PROVIDED"
+      ],
+      "provides": [
+        "action_broken_done"
+      ],
+      "_bug_note": "MISSING_TAG_THAT_NOBODY_PROVIDED is never supplied by any node — this is the causal gap for this chapter.",
+      "_solution_hint": "Player must insert a new node between evt_001 and evt_002 that provides: ['MISSING_TAG_THAT_NOBODY_PROVIDED']."
+    },
+
+    {
+      "_comment": "——— CLOSING NODE EXAMPLE ———",
+      "id": "evt_003",
+      "label": "Archive Endpoint",
+      "text": "Write the final outcome or consequence of the incident.\nConvention: end with — Archive compile endpoint. Status: [OUTCOME_KEYWORD].",
+      "requires": [
+        "action_broken_done",
+        "entity_protagonist"
+      ],
+      "provides": [
+        "mission_outcome"
+      ]
+    }
+  ],
+
+  "_DIFFICULTY_GUIDE": {
+    "Easy (Beginner)": {
+      "event_count": "3 nodes: evt_000 + 1 bug node + 1 closing node",
+      "bug_count": "1 break. The missing tag name maps directly to something mentioned in the narrative text.",
+      "reference": "ch01_data_heist.json"
+    },
+    "Medium": {
+      "event_count": "4-5 nodes",
+      "bug_count": "1 break. The player must read the narrative carefully to infer which tag is missing.",
+      "reference": "ch02_blackout_protocol.json"
+    },
+    "Hard": {
+      "event_count": "5-7 nodes",
+      "bug_count": "2 breaks. Fixing the first returns status: partial, revealing a second error the player must then resolve.",
+      "note": "Design so that the second break is only apparent after the first is fixed."
+    }
+  },
+
+  "_QUICK_CHECKLIST": [
+    "[ ] id matches the filename (without .json)",
+    "[ ] chapter number does not duplicate an existing chapter",
+    "[ ] initial_tags exactly matches evt_000's provides list",
+    "[ ] every evt id is unique and follows the evt_000, evt_001... format",
+    "[ ] clean chain: every requires tag can be found in a prior node's provides (except the bug node)",
+    "[ ] bug node: exactly 1-2 tags in requires that no node ever provides",
+    "[ ] a valid solution exists: player can fix it with a single insert or replace",
+    "[ ] remove all _comment fields before shipping (engine ignores them, but they clutter the file)",
+    "[ ] remove the _comment_initial_tags line from initial_tags"
+  ]
+}
