@@ -1,0 +1,151 @@
+{
+  "_TEMPLATE_README": [
+    "=====================================================================",
+    "  Unreliable Narrative Compiler — 故事文件编写模板",
+    "  使用说明：复制本文件，改名为 chXX_你的标题.json，然后填写内容",
+    "  所有以 _ 开头的字段（如 _bug_note、_TEMPLATE_README）仅供编写者参考，",
+    "  引擎运行时会忽略这些字段，不会影响游戏逻辑",
+    "=====================================================================",
+    "",
+    "【文件命名规则】",
+    "  chXX_short_title.json",
+    "  例：ch04_silent_witness.json",
+    "",
+    "【编写流程（推荐顺序）】",
+    "  1. 设计 tag 因果链（不写正文）：先把 provides/requires 串起来跑通",
+    "  2. 决定在哪里'断开'：删掉某个 provides，或者让某个 requires 引用不存在的 tag",
+    "  3. 确认正确答案：玩家插入/替换哪个节点可以修复 bug？",
+    "  4. 填写叙事正文",
+    "  5. 填写 _bug_note 和 _solution_hint 备注给自己看",
+    "",
+    "【Tag 命名约定（建议遵守，保持一致）】",
+    "  entity_xxx      — 人物出现/在场，例：entity_chen",
+    "  location_xxx    — 场景/地点，例：location_lab7",
+    "  object_xxx      — 关键物品，例：object_keycard",
+    "  state_xxx       — 系统/设备状态，例：state_door_open",
+    "  action_xxx      — 完成了某个操作，例：action_data_copied",
+    "  event_xxx       — 某事件已发生，例：event_alarm_triggered",
+    "  可自由命名，只要 provides 和 requires 之间的字符串完全一致即可"
+  ],
+
+  "_FIELD_GUIDE": {
+    "id":           "关卡唯一标识符，和文件名保持一致（去掉.json）",
+    "chapter":      "章节编号（整数），控制在关卡选择列表中的顺序",
+    "title":        "显示在游戏界面的标题，建议格式：Archive #XXXX-NAME | 副标题",
+    "description":  "一句话描述，显示在关卡选择界面。点出'有什么东西出了问题'，不剧透答案",
+    "bug_type":     "目前固定填 causal_absence（缺少因果节点）",
+    "initial_tags": "游戏开局时默认存在的 tag 列表。evt_000 的 provides 通常和这里一致，evt_000 本身 requires 为空",
+    "events":       "事件节点数组，引擎按顺序逐个执行因果检查"
+  },
+
+  "_EVENT_FIELD_GUIDE": {
+    "id":       "节点ID，格式 evt_000, evt_001, evt_002 ...（不能重复）",
+    "label":    "节点标题，显示在事件图谱上，2-4个英文单词为佳",
+    "text":     "叙事正文，玩家在时间轴面板看到的内容。\\n 表示换行",
+    "requires": "执行本节点前 tag 池里必须存在的 tag 列表。空数组 [] 表示无前提",
+    "provides": "执行本节点后加入 tag 池的 tag 列表。空数组 [] 表示本节点不产出新状态",
+    "_bug_note":"（可选）编写者备注：这里埋了什么 bug，为什么会报错",
+    "_solution_hint": "（可选）编写者备注：玩家应该如何修复这个 bug"
+  },
+
+  "id": "chXX_your_title",
+  "chapter": 99,
+  "title": "Archive #XXXX-NAME | 你的副标题",
+  "description": "一句话：这个档案记录了什么事件，隐含了什么逻辑错误（不剧透答案）",
+  "bug_type": "causal_absence",
+
+  "initial_tags": [
+    "entity_protagonist",
+    "location_start",
+    "_comment_initial_tags: 在这里列出故事开始时已存在的状态，和 evt_000 的 provides 保持一致"
+  ],
+
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Initialization",
+      "text": "Timestamp: 2157-XX-XX XX:XX:XX\n在这里写开场背景：人物在哪里、设备状态如何、任务目标是什么。\n保持冷静的终端日志风格。",
+      "requires": [],
+      "provides": [
+        "entity_protagonist",
+        "location_start",
+        "_comment: evt_000 的 provides 通常和 initial_tags 一致，作为'初始化确认'"
+      ]
+    },
+
+    {
+      "_comment": "——— 中间节点示例（正常节点，因果链完整）———",
+      "id": "evt_001",
+      "label": "Normal Step",
+      "text": "描述一个正常发生的动作或事件。\n这个节点所需的前提（requires）已经被 evt_000 提供，因果链畅通。",
+      "requires": [
+        "entity_protagonist",
+        "location_start"
+      ],
+      "provides": [
+        "action_step_done",
+        "state_something_changed"
+      ]
+    },
+
+    {
+      "_comment": "——— BUG 节点示例（在这里埋设因果错误）———",
+      "id": "evt_002",
+      "label": "Broken Step",
+      "text": "描述一个'结果已经发生、但前提从未被建立'的事件。\n叙事上看起来合理，但 requires 里有一个 tag 在此之前没有任何节点 provides 过。",
+      "requires": [
+        "action_step_done",
+        "MISSING_TAG_THAT_NOBODY_PROVIDED"
+      ],
+      "provides": [
+        "action_broken_done"
+      ],
+      "_bug_note": "MISSING_TAG_THAT_NOBODY_PROVIDED 没有任何节点提供——这是本关的因果断层",
+      "_solution_hint": "玩家需要在 evt_001 和 evt_002 之间插入一个新节点，provides: ['MISSING_TAG_THAT_NOBODY_PROVIDED']"
+    },
+
+    {
+      "_comment": "——— 结尾节点示例 ———",
+      "id": "evt_003",
+      "label": "Archive Endpoint",
+      "text": "故事结尾：描述事件最终的结果或后果。\n最后一行通常是：Archive compile endpoint. Status: [结局关键词]。",
+      "requires": [
+        "action_broken_done",
+        "entity_protagonist"
+      ],
+      "provides": [
+        "mission_outcome"
+      ]
+    }
+  ],
+
+  "_DIFFICULTY_GUIDE": {
+    "简单（新手）": {
+      "事件节点数": "3个（evt_000 + 1个bug节点 + 1个结尾）",
+      "bug数量": "1处，缺失 tag 名称和叙事内容直接相关，容易联想",
+      "参考": "ch01_data_heist.json"
+    },
+    "中等": {
+      "事件节点数": "4-5个",
+      "bug数量": "1处，缺失的 tag 需要玩家仔细阅读叙事才能推断",
+      "参考": "ch02_blackout_protocol.json"
+    },
+    "困难": {
+      "事件节点数": "5-7个",
+      "bug数量": "2处，修复第一个 bug 后才能发现第二个",
+      "说明": "第一处 bug 修复后 compile 返回 partial，存在第二处错误需要继续修"
+    }
+  },
+
+  "_QUICK_CHECKLIST": [
+    "[ ] id 和文件名一致（去掉 .json）",
+    "[ ] chapter 编号没有和现有关卡重复",
+    "[ ] initial_tags 和 evt_000 的 provides 完全一致",
+    "[ ] 每个 evt 的 id 唯一，格式为 evt_000, evt_001...",
+    "[ ] 正常因果链：每个 requires 都能在之前某个节点的 provides 里找到（除了 bug 节点）",
+    "[ ] bug 节点：有且只有 1-2 个 tag 在任何 provides 里都找不到",
+    "[ ] 存在可行的正确解：玩家可以用 insert 或 replace 补上这个 tag",
+    "[ ] 删掉所有 _comment 字段（引擎能忽略它们，但保留会让文件显得凌乱）",
+    "[ ] 在 initial_tags 里删掉 _comment_initial_tags 那一行"
+  ]
+}

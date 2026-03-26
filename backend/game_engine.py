@@ -86,9 +86,24 @@ class GameEngine:
     ) -> dict:
         """
         Execute a patch operation. Returns a standard JSON result:
-            Success: {"status": "success", "message": str, ...}
-            Failure: {"status": "error",   "error_type": str, "message": str}
+            Success:  {"status": "success",  "message": str, ...}
+            Partial:  {"status": "partial",  "message": str, ...}
+            Rejected: {"status": "rejected", "message": str, ...}
+            Failure:  {"status": "error",    "error_type": str, "message": str}
+
+        Before committing, a trial-run is performed on a deep copy of the
+        event list. The patch is only committed if it actually reduces the
+        total number of causal errors.
         """
+        errors_before = len(self.compile())
+
+        # Trial-run on a snapshot to check whether the patch improves anything
+        rejection = self._trial_validate(
+            action_type, target_event_id, after_event_id, new_event_data, errors_before
+        )
+        if rejection is not None:
+            return rejection
+
         if action_type == "insert":
             return self._insert_event(after_event_id, new_event_data)
         elif action_type == "replace":
@@ -113,6 +128,95 @@ class GameEngine:
     # ------------------------------------------------------------------ #
     # Internal helpers                                                      #
     # ------------------------------------------------------------------ #
+
+    def _trial_validate(
+        self,
+        action_type: str,
+        target_event_id: str | None,
+        after_event_id: str | None,
+        new_event_data: dict | None,
+        errors_before: int,
+    ) -> dict | None:
+        """
+        Simulate the patch on a deep copy of the event list.
+        Returns a rejection dict if the patch would not reduce errors,
+        or None if the patch is valid and should proceed.
+        """
+        # reorder is not implemented; let apply_patch handle it normally
+        if action_type not in ("insert", "replace"):
+            return None
+
+        snapshot = copy.deepcopy(self.events)
+        snapshot_counter = self.patch_counter  # won't change the real counter
+
+        try:
+            if action_type == "insert":
+                if after_event_id is None or not new_event_data:
+                    return None  # let the real method return the parameter error
+
+                idx = next(
+                    (i for i, e in enumerate(snapshot) if e["id"] == after_event_id),
+                    None,
+                )
+                if idx is None:
+                    return None  # let the real method return event_not_found
+
+                new_event = {
+                    "id": f"evt_trial_{snapshot_counter + 1:03d}",
+                    "label": new_event_data.get("label", "Trial Node"),
+                    "text": new_event_data.get("text", ""),
+                    "requires": new_event_data.get("requires", []),
+                    "provides": new_event_data.get("provides", []),
+                }
+                snapshot.insert(idx + 1, new_event)
+
+            elif action_type == "replace":
+                if target_event_id is None or not new_event_data:
+                    return None  # let the real method return the parameter error
+
+                idx = next(
+                    (i for i, e in enumerate(snapshot) if e["id"] == target_event_id),
+                    None,
+                )
+                if idx is None:
+                    return None  # let the real method return event_not_found
+
+                old = snapshot[idx]
+                snapshot[idx] = {
+                    "id": target_event_id,
+                    "label": new_event_data.get("label", old["label"]),
+                    "text": new_event_data.get("text", old["text"]),
+                    "requires": new_event_data.get("requires", old["requires"]),
+                    "provides": new_event_data.get("provides", old["provides"]),
+                }
+
+            # Evaluate error count on the snapshot
+            tag_pool = set(self.initial_tags)
+            errors_after = 0
+            for event in snapshot:
+                missing = [t for t in event["requires"] if t not in tag_pool]
+                if missing:
+                    errors_after += 1
+                tag_pool.update(event.get("provides", []))
+
+            if errors_after >= errors_before:
+                return {
+                    "status": "rejected",
+                    "error_type": "no_improvement",
+                    "message": (
+                        f"PATCH REJECTED. Trial simulation shows no reduction in causal errors "
+                        f"(before={errors_before}, after={errors_after}). "
+                        "Operator must re-analyse the dependency chain and propose a valid fix."
+                    ),
+                    "errors_before": errors_before,
+                    "errors_after": errors_after,
+                }
+
+        except Exception:
+            # If simulation itself fails, let the real method surface the error
+            pass
+
+        return None
 
     def _find_event_index(self, event_id: str) -> int | None:
         for i, evt in enumerate(self.events):
