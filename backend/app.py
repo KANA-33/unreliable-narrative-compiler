@@ -15,7 +15,8 @@ from story_loader import list_stories, load_story, load_default_story
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
 
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="/")
-CORS(app, origins=["http://localhost:5173"])
+# Dev: allow Vite dev server. Prod: same-origin, CORS not required but kept permissive for demos.
+CORS(app, origins=["http://localhost:5173", os.environ.get("RENDER_EXTERNAL_URL", "")])
 
 # ------------------------------------------------------------------ #
 # Global game state (single-player demo)                              #
@@ -144,4 +145,5 @@ if __name__ == "__main__":
     print("  Starting Unreliable Narrative Compiler...")
     print("  Dev  : run frontend separately with 'npm run dev' in frontend/")
     print("  Prod : build first with 'npm run build', then open http://localhost:5000")
-    app.run(debug=False, port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=False, host="0.0.0.0", port=port)

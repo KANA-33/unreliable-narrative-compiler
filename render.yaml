@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: unreliable-narrative-compiler
+    runtime: python
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd backend && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false          # 手动在 Render 面板填写，不提交到 git
+      - key: PYTHON_VERSION
+        value: "3.11.0"
