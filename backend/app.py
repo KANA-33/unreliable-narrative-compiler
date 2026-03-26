@@ -3,6 +3,7 @@
 
 import os
 import threading
+from pathlib import Path
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from game_engine import GameEngine
@@ -12,9 +13,10 @@ from story_loader import list_stories, load_story, load_default_story
 
 # In dev, Vite runs on :5173 and proxies /api to here.
 # In production, Flask serves the built frontend from /static.
-STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
+# Use resolve() to get absolute path regardless of working directory.
+STATIC_DIR = str(Path(__file__).resolve().parent.parent / "static")
 
-app = Flask(__name__, static_folder=STATIC_DIR, static_url_path="/")
+app = Flask(__name__)
 # Dev: allow Vite dev server. Prod: same-origin, CORS not required but kept permissive for demos.
 CORS(app, origins=["http://localhost:5173", os.environ.get("RENDER_EXTERNAL_URL", "")])
 
