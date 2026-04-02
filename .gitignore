@@ -35,3 +35,6 @@ Thumbs.db
 
 # ── Claude Code ─────────────────────────────────────────────────────
 .claude/
+
+# ── Local design docs (not for version control) ──────────────────────
+docs/
