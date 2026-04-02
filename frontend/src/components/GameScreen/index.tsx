@@ -23,9 +23,9 @@ export default function GameScreen() {
       <Header />
       <Sidebar />
 
-      {/* Main canvas — mirrors the original ml-64 pt-12 pb-16 grid */}
+      {/* Main canvas — pb-20 accounts for the taller two-row CommandBar */}
       <main
-        className="ml-64 pt-12 pb-16 h-screen overflow-hidden grid gap-px"
+        className="ml-64 pt-12 pb-20 h-screen overflow-hidden grid gap-px"
         style={{
           gridTemplateColumns: '5fr 7fr',
           background: 'rgba(71,71,71,0.1)',
