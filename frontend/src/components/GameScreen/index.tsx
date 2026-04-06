@@ -1,45 +1,32 @@
 import Header from './Header'
-import Sidebar from './Sidebar'
 import NarrativePanel from './NarrativePanel'
 import EventGraph from './EventGraph'
-import DialoguePanel from './DialoguePanel'
-import CompileLog from './CompileLog'
+import DossierNotes from './DossierNotes'
 import CommandBar from './CommandBar'
 
 export default function GameScreen() {
   return (
-    <div className="bg-background text-on-surface font-body cursor-crosshair overflow-hidden h-screen w-screen fade-in">
-
-      {/* CRT overlay */}
-      <div className="crt-overlay" />
-
-      {/* Decorative glitch lines */}
-      <div className="fixed top-1/4 left-0 w-full h-px bg-white/5 pointer-events-none z-[60] animate-flicker" />
-      <div
-        className="fixed top-2/3 left-0 w-full h-px bg-white/5 pointer-events-none z-[60]"
-        style={{ animation: 'flicker 5s infinite' }}
-      />
+    <div className="bg-background text-on-background font-body h-screen w-screen overflow-hidden fade-in">
 
       <Header />
-      <Sidebar />
 
-      {/* Main canvas — pb-20 accounts for the taller two-row CommandBar */}
+      {/* Main canvas — pt-14 for header, pb-[220px] for CommandBar */}
       <main
-        className="ml-64 pt-12 pb-20 h-screen overflow-hidden grid gap-px"
+        className="pt-14 h-screen overflow-hidden grid"
         style={{
-          gridTemplateColumns: '5fr 7fr',
-          background: 'rgba(71,71,71,0.1)',
+          gridTemplateColumns: '7fr 5fr',
+          paddingBottom: 'calc(28vh + 100px)',
         }}
       >
         {/* Left: Narrative Archive */}
         <NarrativePanel />
 
-        {/* Right: Node Graph + bottom split */}
-        <div className="flex flex-col h-full overflow-hidden">
+        {/* Right: Event Graph + Dossier Notes */}
+        <div className="flex flex-col h-full overflow-hidden border-l border-on-background/8">
           <EventGraph />
-          <div className="flex flex-1 overflow-hidden" style={{ minHeight: 0 }}>
-            <DialoguePanel />
-            <CompileLog />
+          <div className="flex-1 flex items-start justify-center overflow-hidden min-h-0"
+               style={{ padding: '8px 16px 0' }}>
+            <DossierNotes />
           </div>
         </div>
       </main>

@@ -1,18 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Space+Grotesk:wght@300..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Be+Vietnam+Pro:wght@100;300;400;500;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Animations ─────────────────────────────────────────────────── */
-@keyframes flicker {
-  0%   { opacity: 1; }
-  5%   { opacity: 0.7; }
-  10%  { opacity: 1; }
-  15%  { opacity: 0.9; }
-  20%  { opacity: 1; }
-  100% { opacity: 1; }
+/* ── Animations ──────────────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes glitch-out {
   0%   { opacity: 1; transform: translateX(0); }
@@ -22,81 +18,92 @@
   80%  { opacity: 0.3; transform: translateX(0); }
   100% { opacity: 0; transform: translateX(0); }
 }
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50%       { opacity: 0; }
 }
+@keyframes float-in {
+  from { opacity: 0; transform: rotate(-1deg) translateY(12px); }
+  to   { opacity: 1; transform: rotate(-1deg) translateY(0); }
+}
 
-.animate-flicker { animation: flicker 4s infinite step-end; }
-.leaving         { animation: glitch-out 0.4s forwards; }
-.fade-in         { animation: fade-in 0.4s ease forwards; }
+.fade-in  { animation: fade-in 0.5s ease forwards; }
+.leaving  { animation: glitch-out 0.4s forwards; }
 
-/* ── Textures ────────────────────────────────────────────────────── */
-.scanline-overlay {
-  background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3) 51%);
-  background-size: 100% 4px;
-}
-.grain-texture {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.08;
-}
-.crt-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  background:
-    linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
-    linear-gradient(90deg, rgba(255,0,0,0.03), rgba(0,255,0,0.01), rgba(0,0,255,0.03));
-  background-size: 100% 3px, 3px 100%;
-  pointer-events: none;
-  z-index: 100;
-}
-.scanline-box {
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 1px,
-    rgba(255,255,255,0.03) 1px,
-    rgba(255,255,255,0.03) 2px
+/* ── Paper & texture effects ──────────────────────────────────────── */
+.rough-edge {
+  clip-path: polygon(
+    0% 2%, 3% 0%, 6% 2%, 10% 0%, 13% 2%, 17% 0%, 20% 3%,
+    24% 1%, 28% 3%, 32% 0%, 36% 2%, 40% 0%, 44% 3%, 48% 1%,
+    52% 3%, 56% 0%, 60% 2%, 64% 0%, 68% 3%, 72% 1%, 76% 3%,
+    80% 0%, 84% 2%, 88% 0%, 92% 2%, 96% 0%, 100% 2%,
+    100% 98%, 97% 100%, 93% 98%, 89% 100%, 85% 97%, 81% 100%,
+    77% 98%, 73% 100%, 69% 97%, 65% 100%, 61% 98%, 57% 100%,
+    53% 97%, 49% 100%, 45% 98%, 41% 100%, 37% 97%, 33% 100%,
+    29% 98%, 25% 100%, 21% 97%, 17% 100%, 13% 98%, 9% 100%,
+    5% 98%, 2% 100%, 0% 98%
   );
 }
-.glitch-hover:hover { animation: flicker 0.1s infinite; }
 
-/* ── Start-screen keys ───────────────────────────────────────────── */
-.key-target {
-  transition: transform 0.1s ease-out;
-  cursor: pointer;
+.paper-texture {
+  background-image: linear-gradient(
+    to bottom right,
+    rgba(253,249,239,0) 0%,
+    rgba(247,243,233,0.5) 100%
+  );
 }
-.key-target:hover { transform: translateY(2px); }
 
-/* ── Loading cursor ──────────────────────────────────────────────── */
+.notebook-bg {
+  background-color: #f4f1ea;
+  background-image:
+    linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
+    linear-gradient(#e8e4dc 0.1em, transparent 0.1em);
+  background-size: 100% 1.4em;
+}
+
+.sticky-note {
+  background-color: #fef08a;
+  box-shadow: 3px 3px 12px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
+  clip-path: polygon(0% 0%, 100% 0%, 100% 88%, 93% 100%, 0% 100%);
+}
+
+.ink-bleed {
+  filter: blur(0.2px) contrast(1.1);
+}
+
+.paper-grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* ── Loading cursor ───────────────────────────────────────────────── */
 .loading::after {
   content: '▋';
   animation: blink 0.65s step-end infinite;
 }
 
-/* ── Scrollbar ───────────────────────────────────────────────────── */
+/* ── Scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 3px; }
-::-webkit-scrollbar-track { background: #0e0e0e; }
-::-webkit-scrollbar-thumb { background: #474747; }
+::-webkit-scrollbar-track { background: #f1eee4; }
+::-webkit-scrollbar-thumb { background: #c4c7c7; }
 
-/* ── Reduced motion ──────────────────────────────────────────────── */
+/* ── Reduced motion ───────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .animate-flicker, .animate-pulse { animation: none; }
-  .grain-texture, .scanline-overlay { display: none; }
+  .fade-in, .leaving { animation: none; }
 }
 
-/* ── Base ────────────────────────────────────────────────────────── */
+/* ── Base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: #131313;
-  color: #e2e2e2;
-  font-family: 'Space Grotesk', sans-serif;
+  background: #fdf9ef;
+  color: #1c1c16;
+  font-family: 'Newsreader', serif;
   overflow: hidden;
   height: 100svh;
   width: 100vw;

@@ -1,134 +1,178 @@
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
 
-const KEYS = Array.from({ length: 19 })
-
 export default function StartScreen() {
   const { setScreen, initGame } = useGameStore()
   const [imgFailed, setImgFailed] = useState(false)
+  const [leaving, setLeaving] = useState(false)
 
   const handleStart = async () => {
-    const el = document.getElementById('start-screen')
-    if (el) {
-      el.classList.add('leaving')
-      await new Promise((r) => setTimeout(r, 400))
-    }
+    if (leaving) return
+    setLeaving(true)
+    await new Promise((r) => setTimeout(r, 350))
     await initGame()
     setScreen('game')
   }
 
   return (
-    <div
-      id="start-screen"
-      className="fixed inset-0 z-[200] bg-black cursor-pointer"
-      onClick={handleStart}
-    >
-      {/* Scanline texture only — no grain */}
-      <div className="fixed inset-0 pointer-events-none scanline-overlay z-[9] opacity-20" />
+    <div className={`fixed inset-0 z-[200] notebook-bg overflow-hidden relative paper-grain ${leaving ? 'leaving' : ''}`}>
 
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 p-8 flex justify-between items-start z-50 pointer-events-none">
-        <div className="flex flex-col">
-          <span className="font-headline font-bold text-2xl tracking-[0.2em] uppercase text-white">
-            UNC_SYSTEM_v1.0
+      {/* Spine shadow for open-notebook look */}
+      <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-8 pointer-events-none opacity-20"
+           style={{ boxShadow: 'inset 10px 0 15px -5px rgba(0,0,0,0.15), inset -10px 0 15px -5px rgba(0,0,0,0.15)' }} />
+
+      {/* Top nav */}
+      <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 py-4
+                      border-b-2 border-dashed border-on-background/20 bg-background/90 backdrop-blur-sm">
+        <div className="text-xl font-headline italic text-on-background underline decoration-wavy">
+          THE_LIVING_DOSSIER
+        </div>
+        <div className="flex items-center gap-6">
+          <a href="#" onClick={(e) => e.preventDefault()}
+             className="font-headline italic text-on-background/50 hover:text-on-background transition-colors text-sm">
+            Metadata
+          </a>
+          <span className="material-symbols-outlined text-on-background cursor-pointer hover:scale-110 transition-transform"
+                style={{ fontSize: 20 }}>
+            account_circle
           </span>
-          <span className="font-label text-outline text-[0.6rem] tracking-[0.3em] mt-1">
-            STATUS: BUFFERING_NARRATIVE
-          </span>
         </div>
-        <div className="flex gap-4">
-          <span className="material-symbols-outlined text-outline" style={{ fontSize: 18 }}>terminal</span>
-          <span className="material-symbols-outlined text-outline" style={{ fontSize: 18 }}>settings</span>
-        </div>
-      </header>
+      </nav>
 
-      {/* Main */}
-      <main className="relative h-full w-full flex flex-col items-center justify-center px-6 pt-24 pb-32 overflow-hidden">
-        {/* Title */}
-        <div className="mb-6 text-center animate-flicker flex-shrink-0">
-          <h1 className="font-headline text-4xl md:text-6xl font-light tracking-tight text-white mb-2 leading-none">
-            Unreliable Narrative <br />
-            <span className="font-label tracking-[0.4em] text-primary-container opacity-60 text-lg md:text-xl">
-              COMPILER
-            </span>
-          </h1>
-          <div className="w-16 h-px bg-primary mx-auto mt-4 opacity-30" />
-        </div>
+      {/* Main canvas */}
+      <main className="relative w-full h-screen flex items-center justify-center p-4 md:p-16 overflow-hidden pt-16">
 
-        {/* Typewriter image */}
-        <div className="relative w-full max-w-2xl flex-shrink-0" style={{ maxHeight: '55vh' }}>
+        {/* Floating polaroid — top right */}
+        <div className="absolute top-20 right-16 hidden md:block -rotate-12 z-10">
           {!imgFailed ? (
-            <img
-              alt="Vintage Typewriter Artifact"
-              className="w-full h-full object-contain pointer-events-none"
-              style={{ maxHeight: '55vh' }}
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5S39x_Os3DVBZT5vhtCjRYKAJv6vvayDsVMvOds6IHCJpQ-di0ggjmjwo1ZQyb3NGEOj3nEPvXSZ5dxstirgqW58Krl4Z9kvIzGpOW7aDmLJEJBVKmJv4x_yRE5YQ44oa1JQX8Gtbl8srgZQEBXtTYCa2YB9tk0jvuCurg_wXJBh2wOGoAjGo6Vjv195Rczv4IaOsBXiXWtFArZpSs5EujWwsye4ZBC6cFQBiLXS7bVKGmcasBvIfJK3MG-Atqc3GJ8I"
-              onError={() => setImgFailed(true)}
-            />
+            <div className="border-4 border-white shadow-xl w-32 h-32 overflow-hidden grayscale sepia brightness-90">
+              <img
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDzJzvdmtVXOUN490t3LEaK1K72XiWJXNX6yotYQqkiu2gLeE5j43_as2iOuFZ969kOefoeEH35t657fvQrV26qZ2KRCF7z62kMmxrr60tpj_MQKQRo45jMXYkwOQRHOBI-nL4wAk6BdeZV6TS0b7viZm9A_P1ss9ur2fEvspzqKLEdEv7-BxwPP362qKRM7jGfyqaOVkAMZ5FtVLXux-fop-ctFhnKAKGv-00Jq-YiEFO8EEHANOMexqkBEc94XjhQV6FvjmJLX7Gw"
+                alt="Evidence"
+                className="w-full h-full object-cover"
+                onError={() => setImgFailed(true)}
+              />
+            </div>
           ) : (
-            /* Fallback: ASCII-art style typewriter placeholder */
-            <div
-              className="w-full flex items-center justify-center font-label text-outline opacity-30 select-none"
-              style={{ maxHeight: '55vh', fontSize: '0.5rem', lineHeight: 1.4, letterSpacing: '0.05em' }}
+            <div className="border-4 border-white shadow-xl w-32 h-32 bg-surface-container-high
+                            flex items-center justify-center text-outline/40 font-label text-[10px]">
+              [PHOTO]
+            </div>
+          )}
+        </div>
+
+        {/* Field notes — bottom left */}
+        <div className="absolute bottom-24 left-10 hidden md:block rotate-3 opacity-80 z-10">
+          <div className="w-40 bg-surface-container-highest border border-on-background/10 p-3 text-[10px] font-label leading-none shadow-md">
+            <p className="mb-1 border-b border-on-background/20 pb-1 font-bold">NOTES_FIELD_04</p>
+            <p className="text-on-background/60 italic leading-tight">
+              Evidence suggests the narrator is intentionally omitting the presence of the [REDACTED] in the hallway. Why?
+            </p>
+          </div>
+        </div>
+
+        {/* Central dossier folder */}
+        <div className="relative z-10 w-full max-w-2xl bg-surface-container-low shadow-2xl p-10 md:p-16
+                        border border-on-background/10 -rotate-1 transition-all duration-700 hover:rotate-0
+                        flex flex-col items-center text-center" style={{ minHeight: '480px' }}>
+
+          {/* Folder tab */}
+          <div className="absolute -top-9 left-10 h-9 w-44 bg-surface-container-low
+                          border-t border-x border-on-background/10 rounded-t-lg flex items-center px-4">
+            <span className="font-label text-[10px] tracking-widest text-on-background/40 uppercase">
+              FILE_REF: 091-UN
+            </span>
+          </div>
+
+          {/* Header metadata */}
+          <div className="w-full flex justify-between items-start opacity-50 mb-8">
+            <div className="text-left font-label text-[9px] uppercase tracking-tighter leading-tight">
+              <p>Subject: Cognitive Dissonance</p>
+              <p>Status: Unverified</p>
+            </div>
+            <div className="text-right font-label text-[9px] uppercase tracking-tighter leading-tight">
+              <p>Date: [REDACTED]</p>
+              <p>Location: Inner-Space</p>
+            </div>
+          </div>
+
+          {/* Main title */}
+          <div className="relative mb-10">
+            <h1 className="font-headline text-6xl md:text-7xl font-black italic text-on-background
+                           tracking-tighter leading-none ink-bleed">
+              Unreliable<br />Narrative
+            </h1>
+            <div className="mt-4 h-[2px] w-full bg-on-background/80 -rotate-1" />
+            <div className="mt-1 h-px w-3/4 mx-auto bg-on-background/50 rotate-1" />
+
+            {/* Annotation sticky */}
+            <div className="absolute -right-6 md:-right-20 top-0 rotate-12 bg-surface-container-highest
+                            p-3 border border-on-background/10 shadow-lg max-w-[140px]">
+              <p className="font-headline italic text-xs text-on-primary-container leading-tight">
+                "The facts don't match the memory..."
+              </p>
+            </div>
+          </div>
+
+          {/* CTAs */}
+          <div className="flex flex-col gap-5 items-center w-full max-w-xs">
+            <button
+              onClick={handleStart}
+              className="group relative w-full py-4 bg-on-background text-surface font-label font-bold
+                         tracking-[0.2em] uppercase hover:scale-105 active:scale-95 transition-all"
             >
-              <pre>{`
-  ╔══════════════════════════════════════════╗
-  ║  [Q][W][E][R][T][Y][U][I][O][P]          ║
-  ║   [A][S][D][F][G][H][J][K][L]            ║
-  ║    [Z][X][C][V][B][N][M]                 ║
-  ║  [         SPACE BAR          ]          ║
-  ╚══════════════════════════════════════════╝
-              `}</pre>
-            </div>
-          )}
+              <span className="relative z-10">Initialize Sequence</span>
+              <div className="absolute -inset-1 border-2 border-on-background/20 rounded-sm -rotate-1 pointer-events-none" />
+            </button>
 
-          {/* Interactive key grid overlay (only when image loaded) */}
-          {!imgFailed && (
-            <div className="absolute inset-0 pointer-events-auto">
-              <div className="absolute top-[55%] left-[28%] w-[44%] h-[20%] grid grid-cols-10 gap-1">
-                {KEYS.map((_, i) => (
-                  <div
-                    key={i}
-                    className="key-target bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-full"
-                  />
-                ))}
-              </div>
-              <div className="absolute top-[76%] left-[38%] w-[24%] h-[4%] key-target bg-white/0 hover:bg-white/5 border border-transparent hover:border-white/10 rounded-full" />
+            <div className="grid grid-cols-2 gap-4 w-full">
+              <button
+                onClick={handleStart}
+                className="relative py-3 border-2 border-on-background/70 font-label text-xs font-bold
+                           uppercase tracking-widest hover:bg-on-background hover:text-surface
+                           transition-colors rotate-1"
+              >
+                Archives
+              </button>
+              <button
+                onClick={handleStart}
+                className="relative py-3 border-2 border-on-background/70 font-label text-xs font-bold
+                           uppercase tracking-widest hover:bg-on-background hover:text-surface
+                           transition-colors -rotate-1"
+              >
+                Settings
+              </button>
             </div>
-          )}
+
+            <button
+              onClick={handleStart}
+              className="mt-2 font-headline italic text-on-background/40 hover:text-on-background
+                         transition-colors flex items-center gap-2 group text-sm"
+            >
+              <span className="material-symbols-outlined text-sm group-hover:rotate-90 transition-transform"
+                    style={{ fontSize: 14 }}>
+                close
+              </span>
+              <span className="underline decoration-wavy">Abandon Protocol</span>
+            </button>
+          </div>
+
+          {/* Confidential tape */}
+          <div className="absolute bottom-10 -left-12 w-52 h-8 bg-on-background/90 mix-blend-multiply
+                          rotate-45 pointer-events-none flex items-center justify-center">
+            <span className="text-surface font-label text-[8px] tracking-[0.4em] font-bold">CONFIDENTIAL</span>
+          </div>
         </div>
 
-        {/* Side metadata */}
-        <div className="absolute left-8 bottom-28 hidden lg:flex flex-col gap-2 border-l border-outline-variant/30 pl-4">
-          <span className="font-label text-outline text-[0.6rem]">ID: REDACTED_77</span>
-          <span className="font-label text-outline text-[0.6rem]">LOCATION: [UNDEFINED]</span>
-          <span className="font-label text-outline text-[0.6rem]">TIMESTAMP: --:--:--</span>
-        </div>
+        {/* Bottom hint */}
+        <p className="absolute bottom-6 left-1/2 -translate-x-1/2 font-label text-[10px]
+                      tracking-widest text-on-background/30 uppercase">
+          Click anywhere to initialize
+        </p>
       </main>
 
-      {/* Footer */}
-      <footer className="fixed bottom-10 left-0 right-0 z-30 text-center pointer-events-none">
-        <div className="flex items-center justify-center gap-3">
-          <div className="w-2 h-2 bg-primary animate-pulse" />
-          <p className="font-label tracking-[0.2em] text-on-surface-variant text-sm opacity-80 animate-flicker">
-            Click Anywhere to Start
-          </p>
-          <div className="w-2 h-2 bg-primary animate-pulse" />
-        </div>
-        <div className="mt-3 flex justify-center gap-8 opacity-20">
-          <span className="font-label text-[0.5rem] tracking-[0.1em]">VERSION_1.0.4_BETA</span>
-          <span className="font-label text-[0.5rem] tracking-[0.1em]">© 1984_UNC_CORP</span>
-        </div>
-      </footer>
-
-      {/* Vertical archive labels */}
-      <div className="fixed left-6 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-12 pointer-events-none opacity-20">
-        {['ARCHIVE_NO_092', 'ARCHIVE_NO_093', 'ARCHIVE_NO_094'].map((label) => (
-          <span key={label} className="font-label text-xs [writing-mode:vertical-rl] rotate-180">
-            {label}
-          </span>
-        ))}
-      </div>
+      {/* Click anywhere fallback */}
+      <div className="fixed inset-0 z-0" onClick={handleStart} />
     </div>
   )
 }

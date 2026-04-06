@@ -47,8 +47,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   initGame: async () => {
     try {
-      const [state, stories] = await Promise.all([api.getState(), api.getStories()])
-      set({ gameState: state, stories })
+      const [{ state }, stories] = await Promise.all([api.reset(), api.getStories()])
+      set({ gameState: state, stories, messages: [] })
       get().addSysMsg(`Story loaded: ${state.story_title}`)
       get().addSysMsg(
         state.is_complete
