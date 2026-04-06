@@ -123,19 +123,6 @@ Each story defines an event sequence with `requires` / `provides` tag arrays tha
 
 ---
 
-## Project Documents
-
-> The following documents are stored locally in `docs/` and are not tracked in the repository. Add them to the repo or host them externally to make the links below active.
-
-| Document | Description |
-|---|---|
-| [Game Design Document](docs/游戏设计文档%20(GDD)：《不可靠叙事编译器》.docx) | Full GDD: mechanics, narrative system, AI integration spec |
-| [Partial Demo Write-up](docs/Partial%20Demo.docx) | Mid-semester demo report and evaluation notes |
-| [UI Design v1](docs/ui_design/) | Initial wireframes — dark cyberpunk aesthetic |
-| [UI Design v2 — Dashboard](docs/ui_design_2/unreliable_narrative_dashboard_final_updated/) | Final UI design: dossier/investigator dashboard layout |
-| [UI Design v2 — Notebook](docs/ui_design_2/unreliable_narrative_final_notebook_design/) | Final UI design: notebook start-screen concept |
-
----
 
 ## Project Structure
 
