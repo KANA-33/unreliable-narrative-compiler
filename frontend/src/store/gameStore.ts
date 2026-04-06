@@ -13,6 +13,10 @@ interface GameStore {
   loading: boolean
   error: string | null
 
+  // Selection
+  selectedEventId: string | null
+  setSelectedEventId: (id: string | null) => void
+
   // Dialogue
   messages: DialogueMessage[]
   _msgCounter: number
@@ -37,6 +41,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   loading: false,
   error: null,
 
+  selectedEventId: null,
+  setSelectedEventId: (selectedEventId) => set({ selectedEventId }),
+
   messages: [],
   _msgCounter: 0,
 
@@ -48,7 +55,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   initGame: async () => {
     try {
       const [{ state }, stories] = await Promise.all([api.reset(), api.getStories()])
-      set({ gameState: state, stories, messages: [] })
+      set({ gameState: state, stories, messages: [], selectedEventId: null })
       get().addSysMsg(`Story loaded: ${state.story_title}`)
       get().addSysMsg(
         state.is_complete
@@ -101,6 +108,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         gameState: state,
         loading: false,
+        selectedEventId: null,
         messages: [{ id: nextId(), role: 'system', text: `Loaded: ${state.story_title}` }],
       })
     } catch (e) {
@@ -115,6 +123,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         gameState: state,
         loading: false,
+        selectedEventId: null,
         messages: [{ id: nextId(), role: 'system', text: 'Session reset. Archive cleared.' }],
       })
     } catch (e) {

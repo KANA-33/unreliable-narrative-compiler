@@ -1,12 +1,86 @@
+import { useRef, useLayoutEffect, useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import type { StoryEvent, CompileError } from '../../types'
 
-function EventEntry({ evt, error }: { evt: StoryEvent; error?: CompileError }) {
-  const isBug   = !!error
-  const isPatch = evt.id.startsWith('evt_patch_')
+// Sketch box SVG overlay — hand-drawn rectangle using global turbulence filter
+function SketchBox({ width, height }: { width: number; height: number }) {
+  const pad = 10
+  const svgW = width + pad * 2
+  const svgH = height + pad * 2
+  const rx = pad - 3
+  const ry = pad - 4
+  const rw = width + 6
+  const rh = height + 8
 
   return (
-    <div className={`relative pl-5 py-2 border-l-2 ${isBug ? 'border-on-primary-container/60' : 'border-on-background/15'}`}>
+    <svg
+      width={svgW}
+      height={svgH}
+      style={{
+        position: 'absolute',
+        top: -pad,
+        left: -pad,
+        pointerEvents: 'none',
+        zIndex: 20,
+        overflow: 'visible',
+      }}
+    >
+      {/* Shadow stroke */}
+      <rect x={rx} y={ry} width={rw} height={rh}
+            fill="none" stroke="rgba(28,28,22,0.15)" strokeWidth="4.5" rx="2"
+            filter="url(#g-sketch-sel)" />
+      {/* Main ink stroke */}
+      <rect x={rx} y={ry} width={rw} height={rh}
+            fill="none" stroke="#1c1c16" strokeWidth="2" rx="2"
+            filter="url(#g-sketch-sel)" />
+    </svg>
+  )
+}
+
+function EventEntry({
+  evt, error, isSelected, onSelect,
+}: {
+  evt: StoryEvent
+  error?: CompileError
+  isSelected: boolean
+  onSelect: () => void
+}) {
+  const isBug   = !!error
+  const isPatch = evt.id.startsWith('evt_patch_')
+  const divRef  = useRef<HTMLDivElement>(null)
+  const [boxSize, setBoxSize] = useState<{ w: number; h: number } | null>(null)
+
+  // Measure element size for the sketch box
+  useLayoutEffect(() => {
+    if (isSelected && divRef.current) {
+      const r = divRef.current.getBoundingClientRect()
+      setBoxSize({ w: r.width, h: r.height })
+    } else {
+      setBoxSize(null)
+    }
+  }, [isSelected])
+
+  // Scroll into view when selected from the graph side
+  useEffect(() => {
+    if (isSelected && divRef.current) {
+      divRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  }, [isSelected])
+
+  return (
+    <div
+      ref={divRef}
+      onClick={onSelect}
+      className={`relative pl-5 py-2 border-l-2 cursor-pointer transition-colors duration-150
+        ${isBug ? 'border-on-primary-container/60' : 'border-on-background/15'}
+        ${isSelected ? 'bg-on-background/[0.04]' : 'hover:bg-on-background/[0.025]'}
+      `}
+    >
+      {/* Hand-drawn sketch box when selected */}
+      {isSelected && boxSize && (
+        <SketchBox width={boxSize.w} height={boxSize.h} />
+      )}
+
       {/* Margin annotation for bugs */}
       {isBug && (
         <span className="absolute -left-16 top-0 text-[9px] text-on-primary-container/60
@@ -28,9 +102,14 @@ function EventEntry({ evt, error }: { evt: StoryEvent; error?: CompileError }) {
             PATCHED
           </span>
         )}
+        {isSelected && (
+          <span className="font-label text-[10px] text-on-background/50 italic ml-auto pr-2">
+            selected
+          </span>
+        )}
       </div>
 
-      {/* Narrative text with inline tag highlighting */}
+      {/* Narrative text */}
       <p className="font-body text-base leading-relaxed text-on-background/90">
         {evt.text.split('\n').map((line, i) => (
           <span key={i}>
@@ -57,7 +136,7 @@ function EventEntry({ evt, error }: { evt: StoryEvent; error?: CompileError }) {
 }
 
 export default function NarrativePanel() {
-  const { gameState } = useGameStore()
+  const { gameState, selectedEventId, setSelectedEventId } = useGameStore()
   if (!gameState) return null
 
   const errorMap = new Map(gameState.errors.map((e) => [e.event_id, e]))
@@ -82,6 +161,10 @@ export default function NarrativePanel() {
             key={evt.id}
             evt={evt}
             error={errorMap.get(evt.id)}
+            isSelected={selectedEventId === evt.id}
+            onSelect={() =>
+              setSelectedEventId(selectedEventId === evt.id ? null : evt.id)
+            }
           />
         ))}
       </div>

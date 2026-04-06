@@ -40,10 +40,9 @@ function Message({ msg }: { msg: DialogueMessage }) {
 }
 
 export default function CommandBar() {
-  const { sendMessage, resetGame, loading, gameState, messages } = useGameStore()
-  const [input, setInput]         = useState('')
-  const [targetNode, setTargetNode] = useState('')
-  const [action, setAction]       = useState('')
+  const { sendMessage, resetGame, loading, gameState, messages, selectedEventId, setSelectedEventId } = useGameStore()
+  const [input, setInput] = useState('')
+  const [action, setAction] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const events = gameState?.events ?? []
@@ -54,9 +53,9 @@ export default function CommandBar() {
 
   const buildMessage = (): string => {
     const parts: string[] = []
-    if (targetNode) {
-      const evt = events.find((e) => e.id === targetNode)
-      parts.push(`[TARGET: ${targetNode}${evt ? ' — ' + evt.label : ''}]`)
+    if (selectedEventId) {
+      const evt = events.find((e) => e.id === selectedEventId)
+      parts.push(`[TARGET: ${selectedEventId}${evt ? ' — ' + evt.label : ''}]`)
     }
     if (action) parts.push(`[ACTION: ${action}]`)
     if (input.trim()) parts.push(input.trim())
@@ -67,7 +66,6 @@ export default function CommandBar() {
     const msg = buildMessage()
     if (!msg || loading) return
     setInput('')
-    setTargetNode('')
     setAction('')
     await sendMessage(msg)
   }
@@ -85,6 +83,8 @@ export default function CommandBar() {
                      font-label text-[11px] px-2 py-1.5 focus:outline-none
                      focus:border-on-background/60 appearance-none cursor-pointer
                      hover:border-on-background/40 transition-colors disabled:opacity-30`
+
+  const selectedEvt = selectedEventId ? events.find((e) => e.id === selectedEventId) : null
 
   return (
     <footer className="fixed bottom-0 w-full z-50 bg-background/97 backdrop-blur-sm
@@ -108,24 +108,31 @@ export default function CommandBar() {
       {/* Controls */}
       <div className="px-8 py-3 flex flex-col gap-2">
 
-        {/* Row 1: Selectors */}
+        {/* Row 1: Target badge + Action selector */}
         <div className="flex items-center gap-3 flex-wrap">
-          <span className="font-label text-[10px] uppercase tracking-widest text-on-background/40 whitespace-nowrap">
-            Target
-          </span>
-          <select
-            value={targetNode}
-            onChange={(e) => setTargetNode(e.target.value)}
-            disabled={loading || events.length === 0}
-            className={`${selectCls} flex-1 max-w-[240px]`}
-          >
-            <option value="">— select node —</option>
-            {events.map((evt) => (
-              <option key={evt.id} value={evt.id} className="bg-background">
-                {evt.id}  {evt.label}
-              </option>
-            ))}
-          </select>
+
+          {/* Target — set by clicking on narrative text or graph node */}
+          {selectedEvt ? (
+            <div className="flex items-center gap-1.5 bg-on-background text-surface
+                            font-label text-[11px] px-2 py-1.5">
+              <span className="opacity-50 text-[9px] uppercase tracking-wider mr-0.5">Target</span>
+              <span className="font-bold">{selectedEvt.id}</span>
+              <span className="opacity-70">— {selectedEvt.label}</span>
+              <button
+                onClick={() => setSelectedEventId(null)}
+                className="ml-1 opacity-60 hover:opacity-100 transition-opacity leading-none flex items-center"
+                aria-label="Clear target"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 13 }}>close</span>
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 border border-dashed border-on-background/25
+                            font-label text-[10px] px-3 py-1.5 text-on-background/35 italic">
+              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>ads_click</span>
+              click a node or event to target
+            </div>
+          )}
 
           <span className="font-label text-[10px] uppercase tracking-widest text-on-background/40 whitespace-nowrap">
             Action
@@ -142,12 +149,6 @@ export default function CommandBar() {
               </option>
             ))}
           </select>
-
-          {(targetNode || action) && (
-            <span className="font-label text-[10px] text-secondary/70 truncate max-w-[180px]">
-              {targetNode && `${targetNode}`}{targetNode && action && ' · '}{action && action.toUpperCase()}
-            </span>
-          )}
         </div>
 
         {/* Row 2: Text input + buttons */}
@@ -160,9 +161,9 @@ export default function CommandBar() {
             disabled={loading}
             placeholder={
               loading ? '' :
-              targetNode || action
-                ? 'Describe diagnosis and proposed fix…'
-                : 'Enter directive or select node/action above…'
+              selectedEvt || action
+                ? 'Describe your diagnosis and proposed fix…'
+                : 'Select a node or event above, then describe your fix…'
             }
             className="flex-1 bg-transparent text-on-background font-body text-sm py-1
                        border-b-2 border-on-background/20 focus:outline-none
