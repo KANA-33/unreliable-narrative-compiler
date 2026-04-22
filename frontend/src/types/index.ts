@@ -1,15 +1,28 @@
+export interface ChoiceOption {
+  id: string
+  label: string
+}
+
 export interface StoryEvent {
   id: string
   label: string
   text: string
   requires: string[]
   provides: string[]
+  type?: 'choice' | 'resolved' | string
+  choices?: ChoiceOption[]
+  resolved_choice_id?: string
 }
 
 export interface CompileError {
   event_id: string
   missing_tags: string[]
   message: string
+}
+
+export interface ChoiceRecord {
+  event_id: string
+  choice_id: string
 }
 
 export interface GameState {
@@ -19,6 +32,9 @@ export interface GameState {
   errors: CompileError[]
   is_complete: boolean
   patches_applied: number
+  violation_count?: number
+  alignment_pct?: number
+  choices_made?: ChoiceRecord[]
 }
 
 export interface StoryMeta {

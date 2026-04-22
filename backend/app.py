@@ -44,16 +44,27 @@ engine, logger, claude, _claude_error = _init_game(_current_story)
 def make_state() -> dict:
     """Build a JSON-serializable snapshot of the current game state."""
     errors = engine.compile()
-    events = [
-        {
+    events = []
+    for e in engine.events:
+        evt = {
             "id":       e["id"],
             "label":    e["label"],
             "text":     e["text"],
-            "requires": e["requires"],
-            "provides": e["provides"],
+            "requires": e.get("requires", []),
+            "provides": e.get("provides", []),
         }
-        for e in engine.events
-    ]
+        # Choice-node metadata (only present on type == "choice" or "resolved")
+        if "type" in e:
+            evt["type"] = e["type"]
+        if "choices" in e:
+            evt["choices"] = [
+                {"id": c["id"], "label": c["label"]}
+                for c in e["choices"]
+            ]
+        if "resolved_choice_id" in e:
+            evt["resolved_choice_id"] = e["resolved_choice_id"]
+        events.append(evt)
+
     return {
         "story_id":        _current_story["id"],
         "story_title":     _current_story["title"],
@@ -61,6 +72,9 @@ def make_state() -> dict:
         "errors":          errors,
         "is_complete":     engine.is_complete(),
         "patches_applied": len(engine.patches_applied),
+        "violation_count": getattr(engine, "violation_count", 0),
+        "alignment_pct":   getattr(engine, "alignment_pct", 100),
+        "choices_made":    list(getattr(engine, "choices_made", [])),
     }
 
 
@@ -116,6 +130,21 @@ def chat():
             return jsonify({"error": str(e)}), 500
 
         return jsonify({"reply": reply, "state": make_state()})
+
+
+@app.route("/api/choice", methods=["POST"])
+def select_choice_route():
+    data = request.get_json() or {}
+    event_id = (data.get("event_id") or "").strip()
+    choice_id = (data.get("choice_id") or "").strip()
+    if not event_id or not choice_id:
+        return jsonify({"error": "Missing event_id or choice_id"}), 400
+
+    with _lock:
+        result = engine.select_choice(event_id, choice_id)
+        if result.get("status") == "error":
+            return jsonify({"error": result.get("message", "choice failed"), "result": result}), 400
+        return jsonify({"result": result, "state": make_state()})
 
 
 @app.route("/api/reset", methods=["POST"])

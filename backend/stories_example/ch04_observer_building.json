@@ -1,0 +1,112 @@
+{
+  "id": "ch04_observer_building",
+  "chapter": 4,
+  "title": "Archive #0049-SYNC | The Observer Building Incident",
+  "description": "一份深夜值班记录。监控画面与现实之间出现了细微的偏差——操作员的每一次选择都将改写因果链。",
+  "bug_type": "causal_absence",
+
+  "initial_tags": [
+    "entity_guard",
+    "location_control_room_14f",
+    "state_shift_active",
+    "state_monitor_online"
+  ],
+
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Shift Initialized",
+      "text": "Timestamp: XX-XX-XX 01:00:00\n实体[保安]就位于14层监控室。蓝色工牌：已佩戴。\n监控矩阵（16路分屏）：运行中。值班手册：已取阅。\n系统提示：全息校准摄像头（The Sync System）处于活跃状态。\n手册规则已加载：每个状态必须与画面一致。",
+      "requires": [],
+      "provides": [
+        "entity_guard",
+        "location_control_room_14f",
+        "state_shift_active",
+        "state_monitor_online"
+      ]
+    },
+
+    {
+      "id": "evt_001",
+      "label": "Anomaly 01 Detected",
+      "text": "Timestamp: XX-XX-XX 01:15:00\n10号分屏捕捉到偏差：画面中的实体[保安]已将红笔拨落——\n但现实中，红笔仍静止在桌面上。\n\n监控定格在红笔落地的瞬间。画面与现实之间出现了0.8秒的逻辑裂缝。\n\nSYNC STATUS: DIVERGENCE DETECTED\n需要操作员介入以恢复现实一致性。",
+      "requires": [
+        "entity_guard",
+        "state_monitor_online"
+      ],
+      "provides": [
+        "state_anomaly_1_active"
+      ]
+    },
+
+    {
+      "_design_note": [
+        "这是一个 choice 节点，扩展了标准事件结构。",
+        "引擎处理规则：",
+        "  - 玩家必须从 choices 中选择一项，该项的 provides 被合并进 tag_pool。",
+        "  - choice_A: 提供 state_pen_aligned → evt_003 的 requires 得到满足，因果链通畅。",
+        "  - choice_B: provides 为空 → state_pen_aligned 永远不会进入 tag_pool,",
+        "              evt_003 的 requires 在 compile() 时报 causal_missing 错误。",
+        "              同时 delta.violation_count +1 写入 GameState。",
+        "  - choice_B 的 causal_errors 字段是对引擎 compile() 输出的前置声明，",
+        "    供 UI 在玩家做出选择时立即显示反馈，无需等待重新 compile。"
+      ],
+      "id": "evt_002",
+      "label": "Anomaly 01 — Red Pen",
+      "type": "choice",
+      "text": "你盯着10号屏幕上那支已经落地的红笔，再低头看看自己手里还静止着的那支。\n手册第一条在脑子里闪过：每个状态必须与画面一致。\n\n你的指尖触碰到笔杆冰冷的塑料外壳。",
+      "requires": [
+        "state_anomaly_1_active"
+      ],
+      "choices": [
+        {
+          "id": "choice_A",
+          "label": "A — 将红笔拨落，对齐现实",
+          "text": "你轻轻一拨，红笔滚落，撞击声在死寂的走廊里激起一阵回音。\n\"咔哒\"——像某个庞大的齿轮终于镶嵌进了它本来的位置。\n10号屏幕的定格画面恢复了正常滚动。\n\nSYNC STATUS: ALIGNED\n异常修正记录 +1 | 对齐度保持 100%",
+          "provides": [
+            "state_pen_aligned",
+            "action_anomaly_1_corrected"
+          ],
+          "delta": {
+            "alignment_pct": 100,
+            "violation_count": 0
+          }
+        },
+        {
+          "id": "choice_B",
+          "label": "B — 无视警告，什么都不做",
+          "text": "你把笔放下，靠回椅背。\n\"这只是某种延迟——或者我看错了。\"\n10号屏幕继续定格着那个不存在的瞬间。没有任何响声。\n\nSYNC STATUS: DIVERGENCE PERSISTS\n警告：现实一致性下降。",
+          "provides": [],
+          "delta": {
+            "alignment_pct": 50,
+            "violation_count": 1
+          },
+          "causal_errors": [
+            {
+              "error_id": "err_pen_unresolved",
+              "event_id": "evt_002",
+              "error_type": "causal_missing",
+              "missing_tags": ["state_pen_aligned"],
+              "message": "Event[evt_002] divergence unresolved: state_pen_aligned was never established. Reality and monitor feed remain out of sync. Downstream node evt_003 cannot be initiated on the current timeline."
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "_bug_note": "state_pen_aligned 仅在 choice_A 被选择后由 evt_002 提供。若玩家选择 choice_B，此节点触发 causal_missing 错误——这是选择B的直接下游后果。",
+      "_solution_hint": "玩家可通过 patch replace evt_002（指定 choice_A 的 provides），或 insert 一个 provides: ['state_pen_aligned'] 的新节点来修复。",
+      "id": "evt_003",
+      "label": "First Cycle Clear",
+      "text": "Timestamp: XX-XX-XX 01:30:00\n系统自检：校准摄像头数据流稳定。\n现实一致性验证通过。\n下一监控周期已启动，实体[保安]继续执行值班任务。\n\nSYNC STATUS: NOMINAL",
+      "requires": [
+        "state_pen_aligned",
+        "entity_guard"
+      ],
+      "provides": [
+        "state_cycle_1_complete"
+      ]
+    }
+  ]
+}

@@ -19,6 +19,16 @@ class GameEngine:
         self.patches_applied = []
         self.patch_counter = 0
 
+        # Choice-node state:
+        #   - violation_count: accumulated from each chosen branch's delta.violation_count
+        #   - alignment_pct: latest delta.alignment_pct reported by a selected choice
+        #   - choices_made: audit trail of which branch was taken at each choice node
+        # Unresolved choice nodes act as inert placeholders during compile() --
+        # they provide nothing, so downstream requires failures will surface naturally.
+        self.violation_count = 0
+        self.alignment_pct = 100
+        self.choices_made: list[dict] = []
+
     # ------------------------------------------------------------------ #
     # Public interface                                                      #
     # ------------------------------------------------------------------ #
@@ -55,6 +65,13 @@ class GameEngine:
               "missing_tags": [str],
               "message": str
             }
+
+        Choice-node handling:
+            A choice node (type == "choice") contributes provides ONLY if the
+            player has already resolved it via select_choice(). Until then it
+            contributes nothing to tag_pool. This is intentional -- it lets
+            downstream causal_missing errors surface through the normal
+            tag_pool check rather than through hardcoded choice logic.
         """
         tag_pool = set(self.initial_tags)
         errors = []
@@ -76,6 +93,104 @@ class GameEngine:
             tag_pool.update(event.get("provides", []))
 
         return errors
+
+    def select_choice(self, event_id: str, choice_id: str) -> dict:
+        """
+        Resolve a choice node by committing one of its branches.
+
+        Mechanism: we mutate the target event in place -- the node's
+        provides becomes the selected branch's provides, its text is
+        replaced with the branch's narrative text, and type is flipped
+        from "choice" to "resolved". No compile() logic needs to know
+        about choices: after resolution the node behaves like any other
+        event, and the usual tag_pool walk surfaces causal errors.
+
+        Side effects:
+            - violation_count += choice.delta.violation_count (default 0)
+            - alignment_pct   = choice.delta.alignment_pct (if present)
+            - choices_made gets an audit entry
+
+        Returns a standard result dict that mirrors apply_patch's shape.
+        """
+        idx = self._find_event_index(event_id)
+        if idx is None:
+            return {
+                "status": "error",
+                "error_type": "event_not_found",
+                "message": f"Event node [{event_id}] does not exist on the current timeline.",
+            }
+
+        event = self.events[idx]
+        if event.get("type") != "choice":
+            return {
+                "status": "error",
+                "error_type": "not_a_choice",
+                "message": f"Event[{event_id}] is not a choice node; select_choice is not applicable.",
+            }
+
+        choice = next((c for c in event.get("choices", []) if c["id"] == choice_id), None)
+        if choice is None:
+            return {
+                "status": "error",
+                "error_type": "choice_not_found",
+                "message": f"Choice[{choice_id}] is not a valid branch of event[{event_id}].",
+            }
+
+        # Commit the branch: rewrite the node as a normal event.
+        delta = choice.get("delta", {}) or {}
+        self.violation_count += int(delta.get("violation_count", 0))
+        if "alignment_pct" in delta:
+            self.alignment_pct = int(delta["alignment_pct"])
+
+        self.events[idx] = {
+            "id": event["id"],
+            "label": f"{event['label']} → {choice['label']}",
+            "text": choice.get("text", event.get("text", "")),
+            "requires": event.get("requires", []),
+            "provides": list(choice.get("provides", [])),
+            "type": "resolved",
+            "resolved_choice_id": choice_id,
+        }
+        self.choices_made.append({"event_id": event_id, "choice_id": choice_id})
+
+        errors = self.compile()
+        if not errors:
+            return {
+                "status": "success",
+                "message": f"Choice[{choice_id}] committed. Causal chain intact.",
+                "event_id": event_id,
+                "choice_id": choice_id,
+                "violation_count": self.violation_count,
+                "alignment_pct": self.alignment_pct,
+                "causal_errors": [],
+            }
+        return {
+            "status": "partial",
+            "message": f"Choice[{choice_id}] committed. Timeline now contains {len(errors)} causal error(s).",
+            "event_id": event_id,
+            "choice_id": choice_id,
+            "violation_count": self.violation_count,
+            "alignment_pct": self.alignment_pct,
+            "causal_errors": errors,
+        }
+
+    def get_state(self) -> dict:
+        """
+        Return the full public state snapshot. Suitable for JSON serialization
+        by the Flask API layer.
+        """
+        errors = self.compile()
+        return {
+            "story_id": self.story.get("id"),
+            "story_title": self.story.get("title"),
+            "events": self.get_event_list(),
+            "causal_errors": errors,
+            "is_complete": len(errors) == 0,
+            "violation_count": self.violation_count,
+            "alignment_pct": self.alignment_pct,
+            "choices_made": list(self.choices_made),
+            "patches_applied": len(self.patches_applied),
+        }
 
     def apply_patch(
         self,

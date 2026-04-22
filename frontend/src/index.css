@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Be+Vietnam+Pro:wght@100;300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Permanent+Marker&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @tailwind base;
@@ -29,6 +29,72 @@
 
 .fade-in  { animation: fade-in 0.5s ease forwards; }
 .leaving  { animation: glitch-out 0.4s forwards; }
+
+/* ── Page-turn (chapter transition) ────────────────────────────── */
+@keyframes page-flip {
+  0%   { transform: perspective(1800px) rotateY(88deg);  opacity: 0; }
+  18%  { transform: perspective(1800px) rotateY(55deg);  opacity: 1; }
+  50%  { transform: perspective(1800px) rotateY(0deg);   opacity: 1; }
+  82%  { transform: perspective(1800px) rotateY(-55deg); opacity: 1; }
+  100% { transform: perspective(1800px) rotateY(-88deg); opacity: 0; }
+}
+
+/* Shadow pulse that reinforces the flip — darker when page is flat */
+@keyframes page-flip-shadow {
+  0%, 100% { box-shadow: 0 0 0 rgba(0,0,0,0); }
+  50%      { box-shadow: 0 30px 80px rgba(40,25,5,0.55),
+                         0 0 0 1px rgba(40,25,5,0.25) inset; }
+}
+
+.page-flip-sheet {
+  animation: page-flip 900ms cubic-bezier(0.55, 0.05, 0.35, 1) forwards,
+             page-flip-shadow 900ms ease-in-out forwards;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+/* A thin vertical crease to sell the "folded page" reading */
+.page-flip-crease {
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg,
+    rgba(40,25,5,0) 0%,
+    rgba(40,25,5,0.25) 15%,
+    rgba(40,25,5,0.35) 50%,
+    rgba(40,25,5,0.25) 85%,
+    rgba(40,25,5,0) 100%);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-flip-sheet { animation: none; opacity: 1; transform: none; }
+}
+
+/* ── Redact sweep (used by RedactableText while patching) ─────────── */
+@keyframes redact-sweep {
+  0%   { background-position: -120% 0; }
+  100% { background-position: 220% 0; }
+}
+.redact-sweep {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(28,28,22,0.0) 20%,
+    rgba(28,28,22,0.85) 45%,
+    rgba(28,28,22,0.85) 55%,
+    rgba(28,28,22,0.0) 80%,
+    transparent 100%
+  );
+  background-size: 60% 100%;
+  background-repeat: no-repeat;
+  animation: redact-sweep 1.4s ease-in-out infinite;
+  mix-blend-mode: multiply;
+}
+@media (prefers-reduced-motion: reduce) {
+  .redact-sweep { animation: none; background: rgba(28,28,22,0.35); }
+}
 
 /* ── Paper & texture effects ──────────────────────────────────────── */
 .rough-edge {
@@ -61,10 +127,64 @@
   background-size: 100% 1.4em;
 }
 
+/* ── Cardboard / archive-box desktop texture ─────────────────────── */
+.cardboard-bg {
+  background-color: #d9c8a3;
+  background-image:
+    /* soft vignette toward the corners */
+    radial-gradient(ellipse at center,
+      rgba(255,250,235,0.35) 0%,
+      rgba(120, 90, 55, 0.00) 45%,
+      rgba(90, 60, 30, 0.28) 100%),
+    /* paper fibre noise */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.38 0 0 0 0 0.28 0 0 0 0 0.15 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    /* coarse cardboard grain */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.18' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.28 0 0 0 0 0.18 0 0 0 0 0.08 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 300px 300px, 600px 600px;
+  background-repeat: no-repeat, repeat, repeat;
+}
+
+/* ── Sticky notes ────────────────────────────────────────────────── */
 .sticky-note {
   background-color: #fef08a;
-  box-shadow: 3px 3px 12px rgba(0,0,0,0.12), 0 1px 3px rgba(0,0,0,0.08);
-  clip-path: polygon(0% 0%, 100% 0%, 100% 88%, 93% 100%, 0% 100%);
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.32 0 0 0 0 0.22 0 0 0 0 0.08 0 0 0 0.12 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #fef3a2 0%, #fbe271 100%);
+  background-size: 180px 180px, 100% 100%;
+  box-shadow:
+    6px 10px 24px rgba(50, 30, 10, 0.35),
+    2px 3px 6px rgba(28, 28, 22, 0.18),
+    inset 0 0 0 1px rgba(180, 140, 40, 0.15);
+  clip-path: polygon(
+    0.5% 2%, 6% 0.5%, 14% 1.8%, 22% 0.3%, 32% 2%, 42% 0.6%, 54% 2%,
+    66% 0.4%, 78% 2.2%, 88% 0.8%, 96% 1.8%, 100% 4%,
+    99.2% 18%, 100% 32%, 98.8% 48%, 100% 64%, 99% 80%, 100% 92%,
+    97% 100%, 82% 98.8%, 68% 100%, 52% 98.5%, 36% 100%, 22% 98.8%, 10% 100%, 2% 98.5%,
+    0.4% 82%, 1.5% 64%, 0.2% 48%, 1.6% 32%, 0.3% 18%
+  );
+}
+
+.sticky-note-dark {
+  background-color: #f2d98a;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0 0.1 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p2)'/%3E%3C/svg%3E"),
+    linear-gradient(180deg, #f7e5a6 0%, #e9c97a 100%);
+  background-size: 200px 200px, 100% 100%;
+  box-shadow: 10px 14px 28px rgba(40, 25, 5, 0.32), 2px 3px 6px rgba(0,0,0,0.14);
+  clip-path: polygon(0% 0%, 100% 0%, 100% 92%, 96% 100%, 0% 100%);
+}
+
+/* Vintage pinned-card used for on-desk artifacts (graph, evidence) */
+.pinned-card {
+  background-color: #f4ecd7;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.26 0 0 0 0 0.12 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23c)'/%3E%3C/svg%3E"),
+    linear-gradient(145deg, #f8efd8 0%, #ead9b0 100%);
+  background-size: 240px 240px, 100% 100%;
+  box-shadow:
+    0 1px 0 rgba(255,250,235,0.8) inset,
+    10px 14px 28px rgba(40, 25, 5, 0.35),
+    2px 4px 10px rgba(28, 28, 22, 0.15);
 }
 
 .ink-bleed {
@@ -80,16 +200,49 @@
   pointer-events: none;
 }
 
+/* Handwritten marker for error/tip callouts */
+.marker-red {
+  font-family: 'Permanent Marker', 'Special Elite', 'Courier New', cursive;
+  color: #a6151c;
+  text-shadow:
+    0.4px 0.2px 0 rgba(166, 21, 28, 0.45),
+    -0.3px 0.4px 0 rgba(120, 10, 15, 0.25);
+  letter-spacing: 0.01em;
+  transform: rotate(-0.6deg);
+  display: inline-block;
+}
+.marker-blue {
+  font-family: 'Permanent Marker', 'Special Elite', 'Courier New', cursive;
+  color: #1a3c75;
+  text-shadow: 0.3px 0.2px 0 rgba(26, 60, 117, 0.35);
+  letter-spacing: 0.01em;
+  transform: rotate(0.4deg);
+  display: inline-block;
+}
+
 /* ── Loading cursor ───────────────────────────────────────────────── */
 .loading::after {
   content: '▋';
   animation: blink 0.65s step-end infinite;
 }
 
+/* Typewriter reveal cursor — blinks at the tail of the animating text */
+.typewriter-cursor {
+  display: inline-block;
+  margin-left: 1px;
+  color: inherit;
+  opacity: 0.75;
+  animation: blink 0.65s step-end infinite;
+  transform: translateY(-1px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .typewriter-cursor { animation: none; opacity: 0; }
+}
+
 /* ── Scrollbar ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar       { width: 3px; }
-::-webkit-scrollbar-track { background: #f1eee4; }
-::-webkit-scrollbar-thumb { background: #c4c7c7; }
+::-webkit-scrollbar-track { background: #e5d6b3; }
+::-webkit-scrollbar-thumb { background: #8b7a56; }
 
 /* ── Reduced motion ───────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
@@ -101,9 +254,18 @@
 
 body {
   margin: 0;
-  background: #fdf9ef;
+  background-color: #d9c8a3;
+  background-image:
+    radial-gradient(ellipse at center,
+      rgba(255,250,235,0.32) 0%,
+      rgba(120, 90, 55, 0.00) 48%,
+      rgba(70, 45, 20, 0.30) 100%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='nb'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.38 0 0 0 0 0.28 0 0 0 0 0.15 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23nb)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='gb'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.18' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.28 0 0 0 0 0.18 0 0 0 0 0.08 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23gb)'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 340px 340px, 620px 620px;
+  background-repeat: no-repeat, repeat, repeat;
   color: #1c1c16;
-  font-family: 'Newsreader', serif;
+  font-family: 'Special Elite', 'Courier Prime', 'Courier New', 'Newsreader', serif;
   overflow: hidden;
   height: 100svh;
   width: 100vw;

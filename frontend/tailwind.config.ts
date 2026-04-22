@@ -41,10 +41,11 @@ export default {
         'inverse-primary':           '#ffb3ac',
       },
       fontFamily: {
-        headline: ['Newsreader', 'serif'],
-        body:     ['Newsreader', 'serif'],
-        label:    ['Be Vietnam Pro', 'sans-serif'],
-        mono:     ['Be Vietnam Pro', 'sans-serif'],
+        headline: ['Special Elite', 'Courier Prime', 'Courier New', 'serif'],
+        body:     ['Special Elite', 'Courier Prime', 'Courier New', 'serif'],
+        label:    ['Special Elite', 'Courier Prime', 'Courier New', 'monospace'],
+        mono:     ['Courier Prime', 'Courier New', 'Special Elite', 'monospace'],
+        marker:   ['Permanent Marker', 'Special Elite', 'Courier New', 'cursive'],
       },
       borderRadius: {
         DEFAULT: '0.125rem',

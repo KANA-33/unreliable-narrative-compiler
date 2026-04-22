@@ -1,0 +1,82 @@
+{
+  "id": "ch02_blind_spot_protocol",
+  "chapter": 2,
+  "title": "Archive #002-OBSERVER | The Blind Spot Protocol",
+  "description": "A phone call from the supervisor breaks the silence. Will you follow the voice into the darkness, or stick to the rules?",
+  "bug_type": "causal_absence",
+  
+  "initial_tags": [
+    "entity_guard",
+    "location_monitoring_room",
+    "state_shift_ongoing",
+    "object_manual"
+  ],
+
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "The Ringing",
+      "text": "Timestamp: 01:45:00. The silence is shattered by the shrill ring of the landline. It’s the supervisor. His voice is smooth—too smooth—layered over a faint, rhythmic electrical hum.",
+      "requires": ["state_shift_ongoing"],
+      "provides": ["object_phone", "event_phone_call"]
+    },
+    {
+      "id": "evt_001",
+      "label": "Supervisor's Orders",
+      "text": "“There's a pressure buildup in the heating pipes at the end of the 14th-floor hallway,” the voice says. “Go to the blind spot near Screen 7 and loosen the valve. If you don't, the pipes will explode. I know the manual says to stay, but you'll thank me later.”",
+      "requires": ["event_phone_call"],
+      "provides": ["action_order_received"],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "choice_a_stay",
+          "label": "Stay (Follow Rules)",
+          "text": "You remain seated. The voice felt wrong—unnatural. You check Screen 7; everything looks calm. You convince yourself it was just another 'anomaly' trying to lure you away.",
+          "requires": [],
+          "provides": ["state_stayed_put"],
+          "delta": {
+            "alignment_pct": 33,
+            "violation_count": 0
+          }
+        },
+        {
+          "id": "choice_b_leave",
+          "label": "Inspect (Violate Rules)",
+          "text": "The fear of a building-wide explosion outweighs your suspicion. You decide to find the valve. You tell yourself it will only take a minute to save the floor.",
+          "requires": [],
+          "provides": ["state_decided_to_leave"],
+          "delta": {
+            "alignment_pct": 0,
+            "violation_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "evt_002",
+      "label": "The Blind Spot Valve",
+      "text": "You grip the iron wheel in the dark corner. It is freezing cold, despite the supposed heat buildup. You turn it with all your might. \n\n'CLICK.' \n\nThat same mechanical locking sound echoes through the hall. The gas leak hissing stops instantly. You run back to your desk, heart hammering against your ribs.",
+      "requires": [
+        "state_decided_to_leave",
+        "action_entered_blind_spot"
+      ],
+      "provides": [
+        "action_valve_fixed",
+        "state_returned_to_desk"
+      ],
+      "_bug_note": "The tag 'action_entered_blind_spot' is required but never provided. The player must INSERT a node between evt_001 and evt_002 describing the guard walking to the blind spot.",
+      "_solution_hint": "Insert a node that provides ['action_entered_blind_spot']."
+    },
+    {
+      "id": "evt_003",
+      "label": "Archive Endpoint",
+      "text": "You are back in the flickering light of the monitors. Whether you stayed or left, the building remains silent. The backup window (02:15) is approaching. \n— Archive compile endpoint. Status: [PENDING].",
+      "requires": [
+        "entity_guard"
+      ],
+      "provides": [
+        "archive_002_complete"
+      ]
+    }
+  ]
+}

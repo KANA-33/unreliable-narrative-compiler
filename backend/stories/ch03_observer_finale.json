@@ -1,0 +1,71 @@
+{
+  "id": "ch03_observer_finale",
+  "chapter": 3,
+  "title": "Archive #003-OBSERVER | The 2:15 Backup",
+  "description": "The screens go dark. The purple light descends. In the absolute silence, you are no longer the one watching.",
+  "bug_type": "causal_absence",
+  
+  "initial_tags": [
+    "entity_guard",
+    "location_monitoring_room",
+    "object_manual",
+    "object_spare_badge",
+    "state_shift_climax"
+  ],
+
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "The Blackout",
+      "text": "Timestamp: 02:15:00. The hum of the monitoring matrix vanishes instantly. The screens die. A suffocating silence fills the room. \n\nSuddenly, the hallway lights flare with a harsh, ultraviolet purple—the color of clinical disinfection. The air grows heavy, making every breath a struggle against an invisible weight.",
+      "requires": ["state_shift_climax"],
+      "provides": ["state_backup_started", "state_environmental_instability"]
+    },
+    {
+      "id": "evt_001",
+      "label": "The Shadow",
+      "text": "You attempt to stand, but your limbs are leaden. Looking back at your chair, you see it: a faceless, silhouette-like figure sitting where you just were. \n\nThe shadow holds out a hand, presenting a crimson ID badge. On it, you see your own name, your own employee ID, and a chilling status: [OFF-DUTY].",
+      "requires": ["state_backup_started"],
+      "provides": ["entity_shadow_figure", "object_red_badge"]
+    },
+    {
+      "id": "evt_002",
+      "label": "The Final Calibration",
+      "text": "The shadow remains motionless, holding the red badge in a gesture of exchange. You remember the spare blue badge in your drawer and the blurred warning in the manual: 'Do not believe the manual... Let reality mimic the monitor.' \n\nWho is the 'correct' data point here?",
+      "requires": ["entity_shadow_figure", "object_spare_badge"],
+      "provides": [],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "choice_a_fix",
+          "label": "Give Spare Badge (Correct Reality)",
+          "text": "You place the spare blue badge on the shadow. It trembles, then dissolves into the static. The purple light fades, but you feel your own body becoming translucent, merging with the desk and the chair.",
+          "requires": ["object_spare_badge"],
+          "provides": ["state_reality_fixed"],
+          "delta": {
+            "alignment_pct": 33,
+            "violation_count": 0
+          }
+        },
+        {
+          "id": "choice_b_accept",
+          "label": "Take Red Badge (Accept Anomaly)",
+          "text": "You reach out and take the red badge. As your fingers brush the shadow's cold surface, the 'Sense of Reality' vanishes. You are no longer a guard. You are the anomaly.",
+          "requires": ["object_red_badge"],
+          "provides": ["state_anomaly_accepted"],
+          "delta": {
+            "alignment_pct": 0,
+            "violation_count": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "evt_003",
+      "label": "Archive Synthesis",
+      "text": "The system processes the final input. The Sync System evaluates the total Alignment and Violation counts to determine the permanent state of the Observer Building archive.\n— Final Evaluation Initiated.",
+      "requires": ["entity_guard"],
+      "provides": ["archive_003_complete"]
+    }
+  ]
+}

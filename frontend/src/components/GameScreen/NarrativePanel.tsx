@@ -1,6 +1,8 @@
 import { useRef, useLayoutEffect, useEffect, useState } from 'react'
 import { useGameStore } from '../../store/gameStore'
 import type { StoryEvent, CompileError } from '../../types'
+import RedactableText from '../RedactableText'
+import Typewriter from '../Typewriter'
 
 // Sketch box SVG overlay — hand-drawn rectangle using global turbulence filter
 function SketchBox({ width, height }: { width: number; height: number }) {
@@ -38,12 +40,16 @@ function SketchBox({ width, height }: { width: number; height: number }) {
 }
 
 function EventEntry({
-  evt, error, isSelected, onSelect,
+  evt, error, isSelected, isPatchingTarget, onSelect, onChoose, choiceBusy, animate,
 }: {
   evt: StoryEvent
   error?: CompileError
   isSelected: boolean
+  isPatchingTarget: boolean
   onSelect: () => void
+  onChoose: (choiceId: string) => void
+  choiceBusy: boolean
+  animate: boolean
 }) {
   const isBug   = !!error
   const isPatch = evt.id.startsWith('evt_patch_')
@@ -110,14 +116,49 @@ function EventEntry({
       </div>
 
       {/* Narrative text */}
-      <p className="font-body text-base leading-relaxed text-on-background/90">
-        {evt.text.split('\n').map((line, i) => (
-          <span key={i}>
-            {line}
-            {i < evt.text.split('\n').length - 1 && <br />}
-          </span>
-        ))}
+      <p className="whitespace-pre-wrap">
+        {animate && !isPatchingTarget ? (
+          <Typewriter
+            text={evt.text}
+            className="font-body text-base leading-relaxed text-on-background/90"
+          />
+        ) : (
+          <RedactableText
+            originalText={evt.text}
+            isPatching={isPatchingTarget}
+            isRedacted={false}
+          />
+        )}
       </p>
+
+      {/* Choice branches — only on unresolved choice nodes */}
+      {evt.type === 'choice' && evt.choices && evt.choices.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {evt.choices.map((c) => (
+            <button
+              key={c.id}
+              onClick={(e) => { e.stopPropagation(); onChoose(c.id) }}
+              disabled={choiceBusy}
+              className="font-label text-[11px] uppercase tracking-widest
+                         px-3 py-1.5 border-2 border-on-background bg-surface
+                         text-on-background
+                         hover:bg-on-background hover:text-surface
+                         disabled:opacity-40 disabled:cursor-not-allowed
+                         transition-colors"
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Resolved choice badge */}
+      {evt.type === 'resolved' && evt.resolved_choice_id && (
+        <div className="mt-2 font-label text-[10px] uppercase tracking-wider
+                        text-on-background/50">
+          branch committed: <span className="font-bold">{evt.resolved_choice_id}</span>
+        </div>
+      )}
 
       {/* Missing tags */}
       {isBug && error?.missing_tags && (
@@ -136,7 +177,36 @@ function EventEntry({
 }
 
 export default function NarrativePanel() {
-  const { gameState, selectedEventId, setSelectedEventId } = useGameStore()
+  const { gameState, selectedEventId, setSelectedEventId, patchingPath,
+          submitChoice, isPatching } = useGameStore()
+
+  // Track each event's last-rendered text, so we typewriter-in any event whose
+  // text is new to us — whether it's a freshly-appended node (patch) or an
+  // existing node whose text was rewritten (e.g. a choice branch committing).
+  const seenTextsRef = useRef<Map<string, string>>(new Map())
+  const storyIdRef = useRef<string | null>(null)
+  const [newlyAdded, setNewlyAdded] = useState<Set<string>>(new Set())
+
+  useLayoutEffect(() => {
+    if (!gameState) return
+    // Chapter change: seed the map without animating anything —
+    // the page-turn overlay already covers this transition.
+    if (storyIdRef.current !== gameState.story_id) {
+      storyIdRef.current = gameState.story_id
+      seenTextsRef.current = new Map(gameState.events.map((e) => [e.id, e.text]))
+      setNewlyAdded((prev) => (prev.size === 0 ? prev : new Set()))
+      return
+    }
+    const changed = new Set<string>()
+    for (const e of gameState.events) {
+      if (seenTextsRef.current.get(e.id) !== e.text) {
+        changed.add(e.id)
+        seenTextsRef.current.set(e.id, e.text)
+      }
+    }
+    if (changed.size > 0) setNewlyAdded(changed)
+  }, [gameState])
+
   if (!gameState) return null
 
   const errorMap = new Map(gameState.errors.map((e) => [e.event_id, e]))
@@ -162,9 +232,13 @@ export default function NarrativePanel() {
             evt={evt}
             error={errorMap.get(evt.id)}
             isSelected={selectedEventId === evt.id}
+            isPatchingTarget={patchingPath?.targetId === evt.id}
             onSelect={() =>
               setSelectedEventId(selectedEventId === evt.id ? null : evt.id)
             }
+            onChoose={(choiceId) => submitChoice(evt.id, choiceId)}
+            choiceBusy={isPatching}
+            animate={newlyAdded.has(evt.id)}
           />
         ))}
       </div>

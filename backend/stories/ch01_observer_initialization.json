@@ -1,0 +1,87 @@
+{
+  "id": "ch01_observer_initialization",
+  "chapter": 1,
+  "title": "Archive #001-OBSERVER | Initial Alignment",
+  "description": "A routine midnight shift at the Observer Building. When the monitor drifts from reality, do you follow the screen or your senses?",
+  "bug_type": "causal_absence",
+  
+  "initial_tags": [
+    "entity_guard",
+    "location_monitoring_room",
+    "object_manual",
+    "object_spare_badge"
+  ],
+
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Initialization",
+      "text": "Timestamp: 2157-05-12 01:00:00\nLocation: Observer Building, Floor 14, Monitoring Hub.\nYou are seated in the worn office chair. Before you is a 16-screen monitoring matrix emitting a pale, flickering glow. To your right lies a tattered 'Shift Manual' and a spare ID badge. A red circle in the manual highlights a single sentence: 'Let reality mimic the monitor.'",
+      "requires": [],
+      "provides": [
+        "entity_guard",
+        "location_monitoring_room",
+        "object_manual",
+        "object_spare_badge"
+      ]
+    },
+    {
+      "id": "evt_001",
+      "label": "Visual Desync",
+      "text": "Your gaze drifts to Screen 10—the feed of this very room. In the video, you drop your red pen. In reality, the pen remains in your hand. \n\nRecalling the manual, you flick the pen to the floor. 'Click.' The sound isn't just plastic hitting wood; it sounds like a massive gear finally locking into place. The monitor returns to normal.",
+      "requires": [
+        "entity_guard",
+        "location_monitoring_room"
+      ],
+      "provides": [
+        "action_pen_dropped",
+        "state_synchronized"
+      ]
+    },
+    {
+      "id": "evt_002",
+      "label": "Gravitational Anomaly",
+      "text": "Timestamp: 01:30:00. You take a sip of water and set the cup down. Although the cup is level on the desk, the water surface tilts sharply to the left as if gravity has shifted. \n\nYou check Screen 10. The monitor shows a perfectly normal cup with level water. If the monitor is 'correct,' what does that make you?",
+      "requires": [
+        "state_synchronized"
+      ],
+      "provides": [],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "choice_a_align",
+          "label": "Align with Monitor",
+          "text": "You carefully move the cup to the center of its coaster, matching the screen exactly. The water surface flattens instantly. Reality has been corrected.",
+          "requires": [],
+          "provides": ["state_cup_aligned"],
+          "delta": {
+            "alignment_pct": 34,
+            "violation_count": 0
+          }
+        },
+        {
+          "id": "choice_b_ignore",
+          "label": "Maintain Deviation",
+          "text": "You leave the cup tilted. You refuse to let the screen dictate the physics of your desk. A cold chill runs down your spine as the 'Sync System' begins to hum aggressively.",
+          "requires": [],
+          "provides": ["state_cup_deviated"],
+          "delta": {
+            "alignment_pct": 0,
+            "violation_count": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "evt_003",
+      "label": "Archive Endpoint",
+      "text": "Phase 1 observation complete. The matrix continues its silent hum, recording every deviation. \n— Archive compile endpoint. Status: [PENDING].",
+      "requires": [
+        "entity_guard"
+      ],
+      "provides": [
+        "archive_001_complete"
+      ]
+    }
+  ]
+}

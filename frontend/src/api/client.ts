@@ -35,4 +35,13 @@ export const api = {
     request<{ status: string; state: GameState }>('/api/reset', {
       method: 'POST',
     }),
+
+  submitChoice: (eventId: string, choiceId: string) =>
+    request<{ result: { status: string; message: string }; state: GameState }>(
+      '/api/choice',
+      {
+        method: 'POST',
+        body: JSON.stringify({ event_id: eventId, choice_id: choiceId }),
+      },
+    ),
 }
