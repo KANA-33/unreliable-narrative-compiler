@@ -226,6 +226,35 @@
   animation: blink 0.65s step-end infinite;
 }
 
+/* Click-to-raise panels (Exhibit A graph card & Dossier Notes sticky).
+   The wrapper gets .focus-panel; adding .is-focused lifts it with a slight
+   scale-up + a deeper drop-shadow, simulating the paper rising off the desk.
+   Drop-shadow is used instead of box-shadow so it hugs the card's actual
+   silhouette (rough-edge clip-path, sticky-note cutout) rather than the
+   rectangular wrapper bounds. */
+.focus-panel {
+  transition: transform 0.3s ease-out, filter 0.3s ease-out, opacity 0.3s ease-out;
+  transform-origin: center center;
+  will-change: transform, filter;
+}
+.focus-panel.is-focused {
+  transform: scale(1.03);
+  filter: drop-shadow(0 22px 32px rgba(28, 25, 5, 0.42))
+          drop-shadow(0 6px 10px rgba(28, 25, 5, 0.22));
+}
+/* Complementary "sunk" state — the sibling panel recedes whenever the other
+   is lifted, so the contrast between foreground and background reads clearly. */
+.focus-panel.is-receded {
+  transform: scale(0.97);
+  filter: drop-shadow(0 2px 4px rgba(28, 25, 5, 0.12));
+  opacity: 0.82;
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-panel { transition: none; }
+  .focus-panel.is-focused { transform: none; filter: drop-shadow(0 6px 14px rgba(28,25,5,0.3)); }
+  .focus-panel.is-receded { transform: none; filter: none; opacity: 0.9; }
+}
+
 /* Typewriter reveal cursor — blinks at the tail of the animating text */
 .typewriter-cursor {
   display: inline-block;

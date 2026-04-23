@@ -8,18 +8,28 @@ export default function Header() {
   const currentStoryId = gameState?.story_id
   const isComplete = !!gameState?.is_complete
 
-  // Next chapter = the story with the next-highest chapter number after the current one
-  const nextStory = useMemo(() => {
-    if (!currentStoryId) return null
-    const sorted = [...stories].sort((a, b) => a.chapter - b.chapter)
-    const idx = sorted.findIndex((s) => s.id === currentStoryId)
-    return idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1] : null
-  }, [stories, currentStoryId])
+  const sortedStories = useMemo(
+    () => [...stories].sort((a, b) => a.chapter - b.chapter),
+    [stories],
+  )
 
-  const canTurnPage = isComplete && !!nextStory && !loading && !isPageTurning
+  const currentIdx = useMemo(
+    () => (currentStoryId ? sortedStories.findIndex((s) => s.id === currentStoryId) : -1),
+    [sortedStories, currentStoryId],
+  )
 
-  const isUnlocked = (storyId: string) =>
-    storyId === currentStoryId || completedChapters.includes(storyId)
+  const currentStory = currentIdx >= 0 ? sortedStories[currentIdx] : null
+  const prevStory = currentIdx > 0 ? sortedStories[currentIdx - 1] : null
+  const nextStory = currentIdx >= 0 && currentIdx < sortedStories.length - 1
+    ? sortedStories[currentIdx + 1]
+    : null
+
+  // Forward: only when the current chapter compiles clean AND a next chapter exists.
+  const canTurnForward = isComplete && !!nextStory && !loading && !isPageTurning
+  // Backward: any time a previous chapter exists — review mode is always allowed.
+  const canTurnBack = !!prevStory && !loading && !isPageTurning
+                      && (completedChapters.includes(prevStory.id)
+                          || prevStory.id === currentStoryId)
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 h-14
@@ -32,67 +42,76 @@ export default function Header() {
         Unreliable_Narrative_Compiler
       </div>
 
-      {/* Chapter selector + turn-page button */}
+      {/* Chapter navigation — prev | current label | next */}
       <div className="flex items-center gap-3">
-        <span className="font-label text-[10px] uppercase tracking-widest text-on-background/40 hidden sm:block">
-          Chapter
-        </span>
-        <select
-          className="bg-transparent border-b border-on-background/20 text-on-background font-label
-                     text-xs py-1 px-2 focus:outline-none focus:border-on-background/60
-                     disabled:opacity-30 appearance-none cursor-pointer"
-          value={currentStoryId ?? ''}
-          onChange={(e) => {
-            const id = e.target.value
-            if (!isUnlocked(id) || id === currentStoryId) return
-            turnToChapter(id)
-          }}
-          disabled={loading || isPageTurning}
-          title="Only completed chapters (and the current one) are selectable."
-        >
-          {stories.map((s) => {
-            const unlocked = isUnlocked(s.id)
-            const label = `CH${String(s.chapter).padStart(2, '0')} — ${s.title}`
-            return (
-              <option
-                key={s.id}
-                value={s.id}
-                disabled={!unlocked}
-                className="bg-background"
-              >
-                {unlocked ? label : `${label}  [LOCKED]`}
-              </option>
-            )
-          })}
-        </select>
 
-        {/* Turn-page button — appears once the current chapter is fully compiled */}
-        {nextStory && (
-          <button
-            type="button"
-            onClick={() => canTurnPage && turnToChapter(nextStory.id)}
-            disabled={!canTurnPage}
-            title={
-              canTurnPage
+        {/* Previous-page button */}
+        <button
+          type="button"
+          onClick={() => canTurnBack && prevStory && turnToChapter(prevStory.id)}
+          disabled={!canTurnBack}
+          title={
+            !prevStory
+              ? 'This is the first chapter.'
+              : canTurnBack
+                ? `Turn back → CH${String(prevStory.chapter).padStart(2, '0')} ${prevStory.title}`
+                : 'Previous chapter is unavailable.'
+          }
+          aria-label="Turn page to previous chapter"
+          className={`group flex items-center gap-1.5 font-label text-[10px] font-bold uppercase
+                      tracking-widest px-2.5 py-1 border-2 select-none transition-all
+                      ${canTurnBack
+                        ? 'border-on-background text-on-background bg-on-background/5 hover:bg-on-background hover:text-background cursor-pointer'
+                        : 'border-on-background/25 text-on-background/30 cursor-not-allowed'}`}
+        >
+          <span
+            className="material-symbols-outlined transition-transform group-hover:-translate-x-0.5"
+            style={{ fontSize: 18 }}
+          >
+            arrow_back
+          </span>
+          <span className="hidden md:inline">Prev</span>
+        </button>
+
+        {/* Current chapter readout — plain label, no longer a selector */}
+        <div className="flex items-baseline gap-2 px-2">
+          <span className="font-label text-[10px] uppercase tracking-widest text-on-background/40 hidden sm:block">
+            Chapter
+          </span>
+          <span className="font-label text-xs text-on-background whitespace-nowrap">
+            {currentStory
+              ? `CH${String(currentStory.chapter).padStart(2, '0')} — ${currentStory.title}`
+              : '—'}
+          </span>
+        </div>
+
+        {/* Next-page button */}
+        <button
+          type="button"
+          onClick={() => canTurnForward && nextStory && turnToChapter(nextStory.id)}
+          disabled={!canTurnForward}
+          title={
+            !nextStory
+              ? 'This is the final chapter.'
+              : canTurnForward
                 ? `Turn page → CH${String(nextStory.chapter).padStart(2, '0')} ${nextStory.title}`
                 : 'Finish compiling this chapter to turn the page.'
-            }
-            aria-label="Turn page to next chapter"
-            className={`group flex items-center gap-1.5 font-label text-[10px] font-bold uppercase
-                        tracking-widest px-2.5 py-1 border-2 select-none transition-all
-                        ${canTurnPage
-                          ? 'border-on-background text-on-background bg-on-background/5 hover:bg-on-background hover:text-background cursor-pointer'
-                          : 'border-on-background/25 text-on-background/30 cursor-not-allowed'}`}
+          }
+          aria-label="Turn page to next chapter"
+          className={`group flex items-center gap-1.5 font-label text-[10px] font-bold uppercase
+                      tracking-widest px-2.5 py-1 border-2 select-none transition-all
+                      ${canTurnForward
+                        ? 'border-on-background text-on-background bg-on-background/5 hover:bg-on-background hover:text-background cursor-pointer'
+                        : 'border-on-background/25 text-on-background/30 cursor-not-allowed'}`}
+        >
+          <span className="hidden md:inline">Next</span>
+          <span
+            className="material-symbols-outlined transition-transform group-hover:translate-x-0.5"
+            style={{ fontSize: 18 }}
           >
-            <span className="hidden md:inline">Turn Page</span>
-            <span
-              className="material-symbols-outlined transition-transform group-hover:translate-x-0.5"
-              style={{ fontSize: 18 }}
-            >
-              arrow_forward
-            </span>
-          </button>
-        )}
+            arrow_forward
+          </span>
+        </button>
       </div>
 
       {/* Nav + icons */}

@@ -104,7 +104,18 @@ export default function EventNodeGraph({ nodes, edges }: EventNodeGraphProps) {
   useEffect(() => {
     const t = setTimeout(recalc, 60)
     window.addEventListener('resize', recalc)
-    return () => { clearTimeout(t); window.removeEventListener('resize', recalc) }
+
+    // Recalc when the card reflows (e.g. nodes wrap to a new row and the
+    // container grows vertically). Watches both the outer card and the
+    // nodes row so wrap-induced size changes trigger edge redraws.
+    const ro = new ResizeObserver(() => recalc())
+    if (containerRef.current) ro.observe(containerRef.current)
+
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('resize', recalc)
+      ro.disconnect()
+    }
   }, [nodes, edges, recalc])
 
   return (
@@ -170,9 +181,27 @@ export default function EventNodeGraph({ nodes, edges }: EventNodeGraphProps) {
 
           {lines.map((l, i) => {
             const cfg = EDGE_STROKE[l.status]
-            const mx = (l.x1 + l.x2) / 2
-            const my = (l.y1 + l.y2) / 2 + (i % 2 === 0 ? -8 : 8)
-            const d  = `M ${l.x1} ${l.y1} Q ${mx} ${my} ${l.x2} ${l.y2}`
+
+            // When wrap puts source and target on different rows, a simple
+            // Q-curve between their centers crosses the gap awkwardly.
+            // Use a cubic Bezier with horizontal handles so the line leaves
+            // the source heading sideways and arrives heading sideways,
+            // producing a smooth "row-to-row" transition.
+            const dy = l.y2 - l.y1
+            const wrapped = Math.abs(dy) > 60
+            let d: string
+            if (wrapped) {
+              const handle = 60
+              const cp1x = l.x1 + handle
+              const cp1y = l.y1
+              const cp2x = l.x2 - handle
+              const cp2y = l.y2
+              d = `M ${l.x1} ${l.y1} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${l.x2} ${l.y2}`
+            } else {
+              const mx = (l.x1 + l.x2) / 2
+              const my = (l.y1 + l.y2) / 2 + (i % 2 === 0 ? -8 : 8)
+              d = `M ${l.x1} ${l.y1} Q ${mx} ${my} ${l.x2} ${l.y2}`
+            }
             return (
               <g key={l.key}>
                 {/* Shadow ghost stroke */}
@@ -199,8 +228,10 @@ export default function EventNodeGraph({ nodes, edges }: EventNodeGraphProps) {
           })}
         </svg>
 
-        {/* Nodes row */}
-        <div className="flex flex-nowrap gap-10 items-center justify-center relative
+        {/* Nodes row — wraps to multiple rows when width runs out.
+            Column gap keeps nodes breathable; larger row gap leaves space
+            for the curved connector to arc between rows. */}
+        <div className="flex flex-wrap gap-x-10 gap-y-14 items-center justify-center relative
                         min-h-[140px] w-full py-4"
              style={{ zIndex: 10 }}>
           {nodes.map((n, i) => (
