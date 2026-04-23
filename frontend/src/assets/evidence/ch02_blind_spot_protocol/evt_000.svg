@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="g2a" cx="50%" cy="55%" r="70%">
+      <stop offset="0%" stop-color="#2a1a2a"/>
+      <stop offset="100%" stop-color="#0a060a"/>
+    </radialGradient>
+    <filter id="n2a"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.35 0 0 0 0 0.22 0 0 0 0 0.35 0 0 0 0.22 0"/></filter>
+  </defs>
+  <rect width="400" height="400" fill="url(#g2a)"/>
+  <!-- desk surface -->
+  <path d="M0 270 Q200 258 400 272 L400 400 L0 400 Z" fill="#1a1014" opacity="0.85"/>
+  <!-- landline phone body -->
+  <g transform="translate(200 260)">
+    <rect x="-90" y="0" width="180" height="60" rx="6" fill="#2a1a1a" stroke="#4a2a2a" stroke-width="1"/>
+    <rect x="-80" y="8" width="160" height="32" rx="3" fill="#0f0a0a"/>
+    <!-- keypad dots -->
+    <g fill="#6a4a4a">
+      <circle cx="-60" cy="24" r="3"/><circle cx="-40" cy="24" r="3"/><circle cx="-20" cy="24" r="3"/>
+      <circle cx="0"   cy="24" r="3"/><circle cx="20"  cy="24" r="3"/><circle cx="40"  cy="24" r="3"/>
+      <circle cx="60"  cy="24" r="3"/>
+    </g>
+    <!-- handset off-hook, tilted -->
+    <g transform="translate(-20 -28) rotate(-14)">
+      <rect x="-70" y="-10" width="140" height="22" rx="10" fill="#3a2020" stroke="#5a3030" stroke-width="1.2"/>
+      <circle cx="-60" cy="0" r="8" fill="#1a0e0e"/>
+      <circle cx="60"  cy="0" r="8" fill="#1a0e0e"/>
+    </g>
+    <!-- coiled cord -->
+    <path d="M40 -20 C 60 -40, 90 -20, 110 -50 S 150 -30, 170 -60"
+          fill="none" stroke="#5a2a2a" stroke-width="1.5" opacity="0.75"/>
+  </g>
+  <!-- red LED indicator -->
+  <circle cx="290" cy="272" r="4" fill="#e04040"/>
+  <circle cx="290" cy="272" r="10" fill="#e04040" opacity="0.25"/>
+  <!-- rhythmic hum waveform -->
+  <g stroke="#a04060" stroke-width="0.8" opacity="0.55">
+    <path d="M20 130 L60 130 L70 110 L80 150 L90 130 L130 130 L140 110 L150 150 L160 130 L200 130 L210 110 L220 150 L230 130 L270 130 L280 110 L290 150 L300 130 L340 130 L350 110 L360 150 L370 130"
+          fill="none"/>
+  </g>
+  <text x="200" y="378" text-anchor="middle" font-family="monospace" font-size="10" fill="#c48080" opacity="0.7">LANDLINE · 01:45:00</text>
+  <rect width="400" height="400" filter="url(#n2a)"/>
+</svg>

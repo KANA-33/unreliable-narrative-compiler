@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="g3a" cx="50%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0a0510"/>
+      <stop offset="100%" stop-color="#02000a"/>
+    </radialGradient>
+    <filter id="n3a"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.2 0 0 0 0 0.12 0 0 0 0 0.32 0 0 0 0.22 0"/></filter>
+  </defs>
+  <rect width="400" height="400" fill="url(#g3a)"/>
+  <!-- dead monitors: 4x4 matrix, all dark -->
+  <g stroke="#1a1020" stroke-width="1.2" fill="#05030a">
+    <rect x="30"  y="30"  width="80" height="64"/>
+    <rect x="120" y="30"  width="80" height="64"/>
+    <rect x="210" y="30"  width="80" height="64"/>
+    <rect x="300" y="30"  width="70" height="64"/>
+    <rect x="30"  y="108" width="80" height="64"/>
+    <rect x="120" y="108" width="80" height="64"/>
+    <rect x="210" y="108" width="80" height="64"/>
+    <rect x="300" y="108" width="70" height="64"/>
+    <rect x="30"  y="186" width="80" height="64"/>
+    <rect x="120" y="186" width="80" height="64"/>
+    <rect x="210" y="186" width="80" height="64"/>
+    <rect x="300" y="186" width="70" height="64"/>
+    <rect x="30"  y="264" width="80" height="64"/>
+    <rect x="120" y="264" width="80" height="64"/>
+    <rect x="210" y="264" width="80" height="64"/>
+    <rect x="300" y="264" width="70" height="64"/>
+  </g>
+  <!-- subtle purple rim-light creeping in from the edges -->
+  <rect x="0" y="0" width="400" height="400"
+        fill="none" stroke="#8040c0" stroke-width="2" opacity="0.25"/>
+  <rect x="0" y="0" width="400" height="8" fill="#8040c0" opacity="0.25"/>
+  <rect x="0" y="392" width="400" height="8" fill="#8040c0" opacity="0.28"/>
+  <!-- hallway bleed from the right edge (UV disinfection light) -->
+  <rect x="370" y="0" width="30" height="400" fill="#a060e0" opacity="0.18"/>
+  <rect x="380" y="0" width="20" height="400" fill="#c080ff" opacity="0.20"/>
+  <!-- single flickering pixel still holding on -->
+  <circle cx="258" cy="230" r="1.6" fill="#e0a0ff" opacity="0.9"/>
+  <!-- signal-lost caption line -->
+  <text x="200" y="360" text-anchor="middle" font-family="monospace" font-size="10" fill="#6040a0" opacity="0.7" letter-spacing="4">— NO SIGNAL —</text>
+  <text x="200" y="378" text-anchor="middle" font-family="monospace" font-size="10" fill="#a070d0" opacity="0.7">HUB · 02:15:00</text>
+  <rect width="400" height="400" filter="url(#n3a)"/>
+</svg>

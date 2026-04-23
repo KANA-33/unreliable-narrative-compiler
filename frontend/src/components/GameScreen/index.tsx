@@ -5,9 +5,10 @@ import EventGraphContainer from '../EventGraphContainer'
 import DossierNotes from './DossierNotes'
 import PatchCommandBar from '../PatchCommandBar'
 import PageTurnOverlay from '../PageTurnOverlay'
+import PhotoStack from '../PhotoStack'
 import { useGameStore } from '../../store/gameStore'
 
-type FocusedPanel = 'graph' | 'notes' | null
+type FocusedPanel = 'graph' | 'notes' | 'photos' | null
 
 export default function GameScreen() {
   const storyId = useGameStore((s) => s.gameState?.story_id)
@@ -23,6 +24,8 @@ export default function GameScreen() {
   const [focusedPanel, setFocusedPanel] = useState<FocusedPanel>(null)
   const graphFocused = focusedPanel === 'graph'
   const notesFocused = focusedPanel === 'notes'
+  const photosFocused = focusedPanel === 'photos'
+  const anyOtherFocused = (key: FocusedPanel) => focusedPanel !== null && focusedPanel !== key
 
   return (
     <div className="bg-background text-on-background font-body h-screen w-screen overflow-hidden fade-in">
@@ -62,7 +65,7 @@ export default function GameScreen() {
               the "click to focus" gesture. */}
           <div
             className={`focus-panel absolute inset-0 flex items-center justify-center p-10 pointer-events-none
-                        ${graphFocused ? 'is-focused z-40' : notesFocused ? 'is-receded z-10' : 'z-10'}`}
+                        ${graphFocused ? 'is-focused z-40' : anyOtherFocused('graph') ? 'is-receded z-10' : 'z-10'}`}
           >
             <div
               onMouseDown={() => setFocusedPanel('graph')}
@@ -72,11 +75,27 @@ export default function GameScreen() {
             </div>
           </div>
 
+          {/* Evidence photo stack — polaroid pile pinned to the upper-right of
+              the desk. Same pointer-events:none / auto shim pattern as the
+              graph wrapper so clicks on the blank corner don't get swallowed
+              and the underlying notes/graph remain reachable. */}
+          <div
+            className={`focus-panel absolute top-4 left-0 right-0 mx-auto w-64 h-80 pointer-events-none
+                        ${photosFocused ? 'is-focused z-40' : anyOtherFocused('photos') ? 'is-receded z-20' : 'z-20'}`}
+          >
+            <div
+              onMouseDown={() => setFocusedPanel('photos')}
+              className="pointer-events-auto w-full h-full"
+            >
+              <PhotoStack />
+            </div>
+          </div>
+
           {/* Dossier Notes — sticky-note widget pinned to the bottom-right of the desk */}
           <div
             onMouseDown={() => setFocusedPanel('notes')}
             className={`focus-panel absolute bottom-10 right-8 w-72 h-72
-                        ${notesFocused ? 'is-focused z-40' : graphFocused ? 'is-receded z-20' : 'z-20'}`}
+                        ${notesFocused ? 'is-focused z-40' : anyOtherFocused('notes') ? 'is-receded z-20' : 'z-20'}`}
           >
             <DossierNotes />
           </div>

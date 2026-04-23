@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <radialGradient id="g2c" cx="50%" cy="55%" r="75%">
+      <stop offset="0%" stop-color="#10141a"/>
+      <stop offset="100%" stop-color="#02030a"/>
+    </radialGradient>
+    <filter id="n2c"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.22 0 0 0 0 0.26 0 0 0 0 0.32 0 0 0 0.22 0"/></filter>
+  </defs>
+  <rect width="400" height="400" fill="url(#g2c)"/>
+  <!-- corridor perspective lines -->
+  <g stroke="#1a2430" stroke-width="0.8" opacity="0.8">
+    <line x1="0" y1="0" x2="200" y2="200"/>
+    <line x1="400" y1="0" x2="200" y2="200"/>
+    <line x1="0" y1="400" x2="200" y2="200"/>
+    <line x1="400" y1="400" x2="200" y2="200"/>
+    <line x1="80" y1="0" x2="200" y2="200"/>
+    <line x1="320" y1="0" x2="200" y2="200"/>
+    <line x1="80" y1="400" x2="200" y2="200"/>
+    <line x1="320" y1="400" x2="200" y2="200"/>
+  </g>
+  <!-- wall panels receding -->
+  <g fill="none" stroke="#2a3848" stroke-width="0.6">
+    <rect x="100" y="100" width="200" height="200"/>
+    <rect x="140" y="140" width="120" height="120"/>
+    <rect x="170" y="170" width="60"  height="60"/>
+  </g>
+  <!-- closed valve at the end (the blind spot) -->
+  <g transform="translate(200 200)">
+    <circle r="34" fill="#0a0608" stroke="#3a2a22" stroke-width="1.5"/>
+    <circle r="22" fill="#1a0e0e" stroke="#5a3030" stroke-width="0.8"/>
+    <!-- valve wheel spokes -->
+    <g stroke="#8a5030" stroke-width="2">
+      <line x1="-20" y1="0" x2="20" y2="0"/>
+      <line x1="0" y1="-20" x2="0" y2="20"/>
+      <line x1="-14" y1="-14" x2="14" y2="14"/>
+      <line x1="14" y1="-14" x2="-14" y2="14"/>
+    </g>
+    <circle r="4" fill="#c44040"/>
+  </g>
+  <!-- "PRESSURE VALVE 7" stencil -->
+  <text x="200" y="260" text-anchor="middle" font-family="monospace" font-size="9" fill="#5a7088" opacity="0.7" letter-spacing="2">VALVE 7 · SEALED</text>
+  <!-- flashlight cone -->
+  <path d="M60 380 L200 200 L340 380 Z" fill="#e8d890" opacity="0.06"/>
+  <!-- scattered dust motes -->
+  <g fill="#c8d8e0" opacity="0.3">
+    <circle cx="180" cy="260" r="0.8"/>
+    <circle cx="220" cy="280" r="0.6"/>
+    <circle cx="160" cy="300" r="1"/>
+    <circle cx="240" cy="320" r="0.7"/>
+    <circle cx="200" cy="340" r="0.9"/>
+    <circle cx="170" cy="350" r="0.5"/>
+  </g>
+  <text x="200" y="378" text-anchor="middle" font-family="monospace" font-size="10" fill="#7090b0" opacity="0.65">BLIND SPOT · SUBSECTOR 14-C</text>
+  <rect width="400" height="400" filter="url(#n2c)"/>
+</svg>
