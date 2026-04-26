@@ -19,6 +19,9 @@ class GameEngine:
         self.patches_applied = []
         self.patch_counter = 0
 
+        # Baseline causal-error count before any player intervention.
+        self.initial_error_count = len(self.compile())
+
         # Choice-node state:
         #   - violation_count: accumulated from each chosen branch's delta.violation_count
         #   - alignment_pct: latest delta.alignment_pct reported by a selected choice
@@ -180,16 +183,18 @@ class GameEngine:
         by the Flask API layer.
         """
         errors = self.compile()
+        complete = len(errors) == 0
         return {
             "story_id": self.story.get("id"),
             "story_title": self.story.get("title"),
             "events": self.get_event_list(),
             "causal_errors": errors,
-            "is_complete": len(errors) == 0,
+            "is_complete": complete,
             "violation_count": self.violation_count,
             "alignment_pct": self.alignment_pct,
             "choices_made": list(self.choices_made),
             "patches_applied": len(self.patches_applied),
+            "initial_error_count": self.initial_error_count,
         }
 
     def apply_patch(

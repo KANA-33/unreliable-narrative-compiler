@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useGameStore } from '../../store/gameStore'
+import SettingsMenu from '../SettingsMenu'
 
 export default function Header() {
   const { gameState, stories, loading, completedChapters, turnToChapter, isPageTurning } =
@@ -117,19 +118,13 @@ export default function Header() {
       {/* Nav + icons */}
       <div className="flex items-center gap-5">
         <div className="hidden lg:flex gap-5 text-sm">
-          {['Case Files', 'Evidence', 'Metadata'].map((label, i) => (
-            <a key={label} href="#" onClick={(e) => e.preventDefault()}
-               className={`font-headline italic transition-transform hover:rotate-1
-                 ${i === 0 ? 'text-secondary underline decoration-2' : 'text-on-background/50 hover:text-secondary'}`}>
-              {label}
-            </a>
-          ))}
+          <a href="#" onClick={(e) => e.preventDefault()}
+             className="font-headline italic transition-transform hover:rotate-1 text-secondary underline decoration-2">
+            Case Files
+          </a>
         </div>
         <div className="flex items-center gap-2 text-on-background/50">
-          <span className="material-symbols-outlined hover:text-on-background transition-colors cursor-pointer"
-                style={{ fontSize: 18 }}>search</span>
-          <span className="material-symbols-outlined hover:text-on-background transition-colors cursor-pointer"
-                style={{ fontSize: 18 }}>account_circle</span>
+          <SettingsMenu iconSize={18} />
         </div>
       </div>
     </header>

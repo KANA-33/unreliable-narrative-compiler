@@ -35,6 +35,7 @@ export interface GameState {
   violation_count?: number
   alignment_pct?: number
   choices_made?: ChoiceRecord[]
+  initial_error_count?: number
 }
 
 export interface StoryMeta {

@@ -65,16 +65,18 @@ def make_state() -> dict:
             evt["resolved_choice_id"] = e["resolved_choice_id"]
         events.append(evt)
 
+    complete = engine.is_complete()
     return {
-        "story_id":        _current_story["id"],
-        "story_title":     _current_story["title"],
-        "events":          events,
-        "errors":          errors,
-        "is_complete":     engine.is_complete(),
-        "patches_applied": len(engine.patches_applied),
-        "violation_count": getattr(engine, "violation_count", 0),
-        "alignment_pct":   getattr(engine, "alignment_pct", 100),
-        "choices_made":    list(getattr(engine, "choices_made", [])),
+        "story_id":            _current_story["id"],
+        "story_title":         _current_story["title"],
+        "events":              events,
+        "errors":              errors,
+        "is_complete":         complete,
+        "patches_applied":     len(engine.patches_applied),
+        "violation_count":     getattr(engine, "violation_count", 0),
+        "alignment_pct":       getattr(engine, "alignment_pct", 100),
+        "choices_made":        list(getattr(engine, "choices_made", [])),
+        "initial_error_count": getattr(engine, "initial_error_count", 0),
     }
 
 

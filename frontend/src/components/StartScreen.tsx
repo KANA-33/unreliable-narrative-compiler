@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useGameStore } from '../store/gameStore'
+import SettingsMenu from './SettingsMenu'
 
 export default function StartScreen() {
   const { setScreen, initGame } = useGameStore()
@@ -28,14 +29,7 @@ export default function StartScreen() {
           THE_LIVING_DOSSIER
         </div>
         <div className="flex items-center gap-6">
-          <a href="#" onClick={(e) => e.preventDefault()}
-             className="font-headline italic text-on-background/50 hover:text-on-background transition-colors text-sm">
-            Metadata
-          </a>
-          <span className="material-symbols-outlined text-on-background cursor-pointer hover:scale-110 transition-transform"
-                style={{ fontSize: 20 }}>
-            account_circle
-          </span>
+          <SettingsMenu iconSize={20} />
         </div>
       </nav>
 
@@ -124,25 +118,6 @@ export default function StartScreen() {
               <span className="relative z-10">Initialize Sequence</span>
               <div className="absolute -inset-1 border-2 border-on-background/20 rounded-sm -rotate-1 pointer-events-none" />
             </button>
-
-            <div className="grid grid-cols-2 gap-4 w-full">
-              <button
-                onClick={handleStart}
-                className="relative py-3 border-2 border-on-background/70 font-label text-xs font-bold
-                           uppercase tracking-widest hover:bg-on-background hover:text-surface
-                           transition-colors rotate-1"
-              >
-                Archives
-              </button>
-              <button
-                onClick={handleStart}
-                className="relative py-3 border-2 border-on-background/70 font-label text-xs font-bold
-                           uppercase tracking-widest hover:bg-on-background hover:text-surface
-                           transition-colors -rotate-1"
-              >
-                Settings
-              </button>
-            </div>
 
             <button
               onClick={handleStart}
