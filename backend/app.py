@@ -2,8 +2,15 @@
 # Flask web server for the Unreliable Narrative Compiler demo
 
 import os
+import sys
 import threading
 from pathlib import Path
+
+# Force UTF-8 on stdout/stderr so log glyphs (⇢, ✓, ⚠, …) don't crash
+# print() under Windows' default GBK console encoding.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
 from flask import Flask, send_from_directory, request, jsonify
 from flask_cors import CORS
 from game_engine import GameEngine
@@ -15,6 +22,8 @@ from story_loader import list_stories, load_story, load_default_story
 # In production, Flask serves the built frontend from /static.
 # Use resolve() to get absolute path regardless of working directory.
 STATIC_DIR = str(Path(__file__).resolve().parent.parent / "static")
+ENDINGS_DIR = Path(__file__).resolve().parent / "endings"
+ENDING_EXTS = ("png", "jpg", "jpeg", "webp", "gif")
 
 app = Flask(__name__)
 # Dev: allow Vite dev server. Prod: same-origin, CORS not required but kept permissive for demos.
@@ -147,6 +156,26 @@ def select_choice_route():
         if result.get("status") == "error":
             return jsonify({"error": result.get("message", "choice failed"), "result": result}), 400
         return jsonify({"result": result, "state": make_state()})
+
+
+@app.route("/api/ending/<story_id>")
+def get_ending_image(story_id: str):
+    # Guard against path traversal — only allow alphanumerics, underscore, dash.
+    safe_id = "".join(c for c in story_id if c.isalnum() or c in "_-")
+    if not safe_id:
+        return jsonify({"error": "invalid story_id"}), 400
+
+    for ext in ENDING_EXTS:
+        candidate = ENDINGS_DIR / f"{safe_id}.{ext}"
+        if candidate.exists():
+            return send_from_directory(str(ENDINGS_DIR), f"{safe_id}.{ext}")
+
+    for ext in ENDING_EXTS:
+        fallback = ENDINGS_DIR / f"default.{ext}"
+        if fallback.exists():
+            return send_from_directory(str(ENDINGS_DIR), f"default.{ext}")
+
+    return jsonify({"error": "no ending image found"}), 404
 
 
 @app.route("/api/reset", methods=["POST"])

@@ -7,7 +7,11 @@ export default function Header() {
     useGameStore()
 
   const currentStoryId = gameState?.story_id
-  const isComplete = !!gameState?.is_complete
+  // Same gating as the ending arrow: only count a chapter as complete once
+  // every choice node has actually been resolved.
+  const isComplete =
+    !!gameState?.is_complete &&
+    !gameState.events.some((e) => e.type === 'choice')
 
   const sortedStories = useMemo(
     () => [...stories].sort((a, b) => a.chapter - b.chapter),

@@ -12,8 +12,17 @@ type FocusedPanel = 'graph' | 'notes' | 'photos' | null
 
 export default function GameScreen() {
   const storyId = useGameStore((s) => s.gameState?.story_id)
-  const isComplete = useGameStore((s) => !!s.gameState?.is_complete)
+  // Chapter is "done" only when the engine compiles AND every choice node has
+  // been resolved. Without the second clause, a chapter whose downstream
+  // events don't depend on the choice's provides would compile clean from the
+  // start and prematurely unlock the ending arrow.
+  const isComplete = useGameStore((s) => {
+    const gs = s.gameState
+    if (!gs?.is_complete) return false
+    return !gs.events.some((e) => e.type === 'choice')
+  })
   const markChapterCompleted = useGameStore((s) => s.markChapterCompleted)
+  const setScreen = useGameStore((s) => s.setScreen)
 
   useEffect(() => {
     if (isComplete && storyId) markChapterCompleted(storyId)
@@ -103,6 +112,23 @@ export default function GameScreen() {
       </main>
 
       <PatchCommandBar />
+
+      {/* Ending trigger — red arrow at bottom-right, only when chapter is complete */}
+      {isComplete && (
+        <button
+          type="button"
+          onClick={() => setScreen('ending')}
+          aria-label="Enter ending"
+          title="Enter ending"
+          className="fixed bottom-24 right-6 z-[60] w-12 h-12 flex items-center justify-center
+                     rounded-full bg-red-700 hover:bg-red-600 text-white shadow-xl
+                     border-2 border-red-900/60 ending-arrow-anim hover:scale-110 transition-transform"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 28 }}>
+            arrow_forward
+          </span>
+        </button>
+      )}
 
       <PageTurnOverlay />
     </div>

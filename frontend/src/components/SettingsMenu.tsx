@@ -7,8 +7,9 @@ interface Props {
 }
 
 export default function SettingsMenu({ iconSize = 20, className = '' }: Props) {
-  const { setScreen } = useGameStore()
+  const { setScreen, clearAndRestart } = useGameStore()
   const [open, setOpen] = useState(false)
+  const [restarting, setRestarting] = useState(false)
   const wrapRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -34,8 +35,19 @@ export default function SettingsMenu({ iconSize = 20, className = '' }: Props) {
     setScreen('start')
   }
 
-  const handleSettings = () => {
-    // intentionally empty — placeholder for future settings panel
+  const handleRestart = async () => {
+    if (restarting) return
+    const ok = window.confirm(
+      'Restart the game? Your current progress and cached choices will be cleared.',
+    )
+    if (!ok) return
+    setRestarting(true)
+    setOpen(false)
+    try {
+      await clearAndRestart()
+    } finally {
+      setRestarting(false)
+    }
   }
 
   return (
@@ -63,12 +75,13 @@ export default function SettingsMenu({ iconSize = 20, className = '' }: Props) {
         >
           <button
             type="button"
-            onClick={handleSettings}
+            onClick={handleRestart}
+            disabled={restarting}
             className="w-full text-left px-4 py-2 font-label text-xs uppercase tracking-widest
                        text-on-background/80 hover:bg-on-background hover:text-surface
-                       transition-colors"
+                       transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Settings
+            {restarting ? 'Restarting…' : 'Restart'}
           </button>
           <div className="h-px bg-on-background/15 mx-2" />
           <button

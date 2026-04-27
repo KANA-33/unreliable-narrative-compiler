@@ -9,14 +9,18 @@ export interface PatchingPath {
 
 interface GameStore {
   // Screen
-  screen: 'start' | 'game'
-  setScreen: (s: 'start' | 'game') => void
+  screen: 'start' | 'game' | 'ending'
+  setScreen: (s: 'start' | 'game' | 'ending') => void
 
   // Game state
   gameState: GameState | null
   stories: StoryMeta[]
   loading: boolean
   error: string | null
+
+  // Per-chapter snapshots so revisiting a previously-played chapter via
+  // turnToChapter() restores the choices the player already made.
+  chapterStates: Record<string, GameState>
 
   // Selection
   selectedEventId: string | null
@@ -47,6 +51,8 @@ interface GameStore {
   clearPatchError: () => void
   loadStory: (storyId: string) => Promise<void>
   resetGame: () => Promise<void>
+  restoreFromCache: () => Promise<boolean>
+  clearAndRestart: () => Promise<void>
   addSysMsg: (text: string) => void
 }
 
@@ -54,6 +60,21 @@ let _id = 0
 const nextId = () => ++_id
 
 const COMPLETED_LS_KEY = 'unc.completedChapters'
+const GAME_CACHE_KEY = 'unc.gameCache'
+const GAME_CACHE_TTL_MS = 30 * 60 * 1000 // 30 minutes — sliding window
+const GAME_CACHE_VERSION = 1
+
+interface CachedGame {
+  v: number
+  ts: number
+  screen: 'start' | 'game' | 'ending'
+  gameState: GameState | null
+  completedChapters: string[]
+  selectedEventId: string | null
+  messages: DialogueMessage[]
+  msgCounter: number
+  chapterStates: Record<string, GameState>
+}
 
 function loadCompletedChapters(): string[] {
   try {
@@ -74,6 +95,43 @@ function saveCompletedChapters(ids: string[]) {
   }
 }
 
+function readGameCache(): CachedGame | null {
+  try {
+    const raw = localStorage.getItem(GAME_CACHE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as CachedGame
+    if (!parsed || parsed.v !== GAME_CACHE_VERSION) return null
+    if (typeof parsed.ts !== 'number') return null
+    if (Date.now() - parsed.ts > GAME_CACHE_TTL_MS) {
+      localStorage.removeItem(GAME_CACHE_KEY)
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function writeGameCache(cache: CachedGame) {
+  try {
+    localStorage.setItem(GAME_CACHE_KEY, JSON.stringify(cache))
+  } catch {
+    // storage unavailable — silently skip
+  }
+}
+
+function clearGameCache() {
+  try {
+    localStorage.removeItem(GAME_CACHE_KEY)
+  } catch {
+    // ignore
+  }
+}
+
+// Suppress cache writes while we're applying restored state to avoid clobbering
+// the cache with intermediate sync states.
+let _suspendPersist = false
+
 export const useGameStore = create<GameStore>((set, get) => ({
   screen: 'start',
   setScreen: (screen) => set({ screen }),
@@ -82,6 +140,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   stories: [],
   loading: false,
   error: null,
+
+  chapterStates: {},
 
   selectedEventId: null,
   setSelectedEventId: (selectedEventId) => set({ selectedEventId }),
@@ -108,6 +168,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
   turnToChapter: async (storyId) => {
     if (get().isPageTurning) return
     set({ isPageTurning: true })
+
+    // Snapshot the chapter we're leaving so a later return brings the player
+    // back to whatever choices they had already committed.
+    const cur = get().gameState
+    if (cur && cur.story_id !== storyId) {
+      set((s) => ({
+        chapterStates: { ...s.chapterStates, [cur.story_id]: cur },
+      }))
+    }
+
     // Phase 1: the page covers the screen (animation runs 0–450ms).
     await new Promise((r) => setTimeout(r, 450))
     // Phase 2: swap the story while the paper fully covers the viewport.
@@ -231,12 +301,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
   loadStory: async (storyId) => {
     set({ loading: true })
     try {
-      const { state } = await api.loadStory(storyId)
+      const cached = get().chapterStates[storyId]
+      const { state: loaded } = await api.loadStory(storyId)
+      let live: GameState = loaded
+
+      // If we've played this chapter already, replay the recorded choices on
+      // the backend so the engine ends up in the same resolved state the
+      // player last saw — including the generated narrative text.
+      if (cached) {
+        for (const c of cached.choices_made ?? []) {
+          try {
+            const { state: next } = await api.submitChoice(c.event_id, c.choice_id)
+            live = next
+          } catch {
+            // A choice that no longer applies is skipped silently — the
+            // remaining UI still reflects whatever the engine accepted.
+          }
+        }
+      }
+
       set({
-        gameState: state,
+        gameState: live,
         loading: false,
         selectedEventId: null,
-        messages: [{ id: nextId(), role: 'system', text: `Loaded: ${state.story_title}` }],
+        messages: [{
+          id: nextId(),
+          role: 'system',
+          text: cached ? `Resumed: ${live.story_title}` : `Loaded: ${live.story_title}`,
+        }],
       })
     } catch (e) {
       set({ loading: false, error: String(e) })
@@ -257,4 +349,132 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({ loading: false, error: String(e) })
     }
   },
+
+  restoreFromCache: async () => {
+    const cache = readGameCache()
+    if (!cache) return false
+    if (!cache.gameState || cache.screen === 'start') {
+      // Nothing meaningful to restore — drop the stale entry.
+      clearGameCache()
+      return false
+    }
+
+    const storyId = cache.gameState.story_id
+    const choices = cache.gameState.choices_made ?? []
+
+    _suspendPersist = true
+    try {
+      // 1) Optimistically rehydrate the UI from cache so the user sees their
+      //    progress without waiting on the backend round-trip.
+      _id = Math.max(_id, cache.msgCounter || 0)
+      set({
+        screen: cache.screen,
+        gameState: cache.gameState,
+        completedChapters: cache.completedChapters ?? get().completedChapters,
+        selectedEventId: cache.selectedEventId,
+        messages: cache.messages ?? [],
+        chapterStates: cache.chapterStates ?? {},
+        loading: true,
+      })
+
+      // 2) Resync backend: load the same story, then replay each choice so the
+      //    server-side engine ends up in the same state the cache reflects.
+      try {
+        const stories = await api.getStories()
+        const { state: loaded } = await api.loadStory(storyId)
+        let live: GameState = loaded
+        for (const c of choices) {
+          try {
+            const { state: next } = await api.submitChoice(c.event_id, c.choice_id)
+            live = next
+          } catch {
+            // Skip a choice that no longer applies — we still keep the cached UI.
+          }
+        }
+        set({ stories, gameState: live, loading: false })
+      } catch {
+        set({ loading: false })
+      }
+    } finally {
+      _suspendPersist = false
+      // Refresh the timestamp now that we've successfully resumed.
+      persistNow(get())
+    }
+    return true
+  },
+
+  clearAndRestart: async () => {
+    clearGameCache()
+    saveCompletedChapters([])
+    _suspendPersist = true
+    try {
+      set({
+        screen: 'start',
+        gameState: null,
+        selectedEventId: null,
+        messages: [],
+        completedChapters: [],
+        chapterStates: {},
+        isPatching: false,
+        patchingPath: null,
+        patchError: null,
+        error: null,
+      })
+      try {
+        await api.reset()
+      } catch {
+        // backend reset is best-effort; the next initGame() will retry.
+      }
+    } finally {
+      _suspendPersist = false
+    }
+  },
 }))
+
+function persistNow(s: GameStore) {
+  if (_suspendPersist) return
+  // Don't bother caching the empty start screen.
+  if (s.screen === 'start' && !s.gameState) return
+  writeGameCache({
+    v: GAME_CACHE_VERSION,
+    ts: Date.now(),
+    screen: s.screen,
+    gameState: s.gameState,
+    completedChapters: s.completedChapters,
+    selectedEventId: s.selectedEventId,
+    messages: s.messages,
+    msgCounter: _id,
+    chapterStates: s.chapterStates,
+  })
+}
+
+// Save the relevant slices on every change. The TTL is sliding — each write
+// refreshes the timestamp, so an active session never expires mid-play.
+useGameStore.subscribe((state, prev) => {
+  // Mirror the live gameState into chapterStates so on-chapter activity (new
+  // choices, patches) keeps the per-chapter snapshot fresh even without a
+  // subsequent turnToChapter().
+  if (
+    state.gameState &&
+    state.gameState !== prev.gameState &&
+    state.chapterStates[state.gameState.story_id] !== state.gameState
+  ) {
+    const sid = state.gameState.story_id
+    useGameStore.setState({
+      chapterStates: { ...state.chapterStates, [sid]: state.gameState },
+    })
+    return // the resulting state change will fire this subscriber again
+  }
+
+  if (
+    state.screen === prev.screen &&
+    state.gameState === prev.gameState &&
+    state.completedChapters === prev.completedChapters &&
+    state.selectedEventId === prev.selectedEventId &&
+    state.messages === prev.messages &&
+    state.chapterStates === prev.chapterStates
+  ) {
+    return
+  }
+  persistNow(state)
+})
