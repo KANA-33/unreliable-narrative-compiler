@@ -21,12 +21,22 @@ export default function GameScreen() {
     if (!gs?.is_complete) return false
     return !gs.events.some((e) => e.type === 'choice' && !e.resolved_choice_id)
   })
+  const stories = useGameStore((s) => s.stories)
+  const completedChapters = useGameStore((s) => s.completedChapters)
   const markChapterCompleted = useGameStore((s) => s.markChapterCompleted)
   const setScreen = useGameStore((s) => s.setScreen)
 
   useEffect(() => {
     if (isComplete && storyId) markChapterCompleted(storyId)
   }, [isComplete, storyId, markChapterCompleted])
+
+  // Ending arrow only unlocks once every chapter in the game has been
+  // completed (all options + patches in every archive). The current chapter
+  // must also be currently complete — so a player who navigates back and
+  // un-resolves a choice loses the arrow until the timeline is whole again.
+  const allChaptersComplete =
+    stories.length > 0 && stories.every((s) => completedChapters.includes(s.id))
+  const showEndingArrow = isComplete && allChaptersComplete
 
   // Which right-pane panel should float on top right now. Click-to-focus:
   // clicking a panel raises it; the other drops to its default z-index.
@@ -113,8 +123,9 @@ export default function GameScreen() {
 
       <PatchCommandBar />
 
-      {/* Ending trigger — red arrow at bottom-right, only when chapter is complete */}
-      {isComplete && (
+      {/* Ending trigger — red arrow at bottom-right, only when every chapter
+          (all choices + all patches across the game) has been completed. */}
+      {showEndingArrow && (
         <button
           type="button"
           onClick={() => setScreen('ending')}

@@ -180,7 +180,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   initGame: async () => {
     try {
       const [{ state }, stories] = await Promise.all([api.reset(), api.getStories()])
-      set({ gameState: state, stories, messages: [], selectedEventId: null })
+      // A fresh playthrough must zero the cross-chapter score and per-chapter
+      // snapshots — otherwise an ending viewed at score=+3 leaks into the next
+      // run and the ch3 → ending router resolves against stale state.
+      set({
+        gameState: state,
+        stories,
+        messages: [],
+        selectedEventId: null,
+        totalScore: 0,
+        chapterStates: {},
+      })
       get().addSysMsg(`Story loaded: ${state.story_title}`)
       get().addSysMsg(
         state.is_complete
