@@ -44,7 +44,8 @@
           "provides": ["state_reality_fixed"],
           "delta": {
             "alignment_pct": 33,
-            "violation_count": 0
+            "violation_count": 0,
+            "score": 1
           }
         },
         {
@@ -55,7 +56,8 @@
           "provides": ["state_anomaly_accepted"],
           "delta": {
             "alignment_pct": 0,
-            "violation_count": 2
+            "violation_count": 2,
+            "score": -1
           }
         }
       ]

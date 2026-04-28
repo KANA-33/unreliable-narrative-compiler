@@ -56,7 +56,8 @@
           "provides": ["state_cup_aligned"],
           "delta": {
             "alignment_pct": 34,
-            "violation_count": 0
+            "violation_count": 0,
+            "score": 1
           }
         },
         {
@@ -67,7 +68,8 @@
           "provides": ["state_cup_deviated"],
           "delta": {
             "alignment_pct": 0,
-            "violation_count": 1
+            "violation_count": 1,
+            "score": -1
           }
         }
       ]

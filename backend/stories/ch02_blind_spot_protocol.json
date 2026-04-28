@@ -36,7 +36,8 @@
           "provides": ["state_stayed_put"],
           "delta": {
             "alignment_pct": 33,
-            "violation_count": 0
+            "violation_count": 0,
+            "score": 1
           }
         },
         {
@@ -47,7 +48,8 @@
           "provides": ["state_decided_to_leave"],
           "delta": {
             "alignment_pct": 0,
-            "violation_count": 1
+            "violation_count": 1,
+            "score": -1
           }
         }
       ]

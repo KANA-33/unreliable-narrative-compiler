@@ -4,10 +4,16 @@ import { useGameStore } from '../store/gameStore'
 const IMAGE_ANIM_MS = 6000
 
 export default function EndingScreen() {
-  const { gameState, setScreen } = useGameStore()
-  const storyId = gameState?.story_id
+  const { totalScore, setScreen } = useGameStore()
   const [animDone, setAnimDone] = useState(false)
   const [imgError, setImgError] = useState(false)
+
+  // Score → ending bucket. The backend's /api/ending/<key> route looks up
+  // <key>.<ext> in backend/endings/, so dropping in positive.jpg / zero.jpg /
+  // negative.jpg (or .png/.webp/.gif) is enough to wire up the visuals.
+  // Falls back to default.jpg if a bucket image is missing.
+  const outcome =
+    totalScore > 0 ? 'positive' : totalScore < 0 ? 'negative' : 'zero'
 
   useEffect(() => {
     const t = setTimeout(() => setAnimDone(true), IMAGE_ANIM_MS)
@@ -24,9 +30,9 @@ export default function EndingScreen() {
       className={`fixed inset-0 z-[400] bg-black overflow-hidden select-none
                   ${animDone ? 'cursor-pointer' : 'cursor-default'}`}
     >
-      {storyId && !imgError && (
+      {!imgError && (
         <img
-          src={`/api/ending/${storyId}`}
+          src={`/api/ending/${outcome}`}
           alt=""
           onError={() => setImgError(true)}
           className="absolute inset-0 w-full h-full object-cover ending-image-anim

@@ -32,6 +32,11 @@ class GameEngine:
         self.alignment_pct = 100
         self.choices_made: list[dict] = []
 
+        # Per-chapter player score: each resolved choice contributes
+        # delta.score (typically +1 or -1). The frontend rolls these up into
+        # a cross-chapter totalScore that drives the ending image selection.
+        self.score = 0
+
     # ------------------------------------------------------------------ #
     # Public interface                                                      #
     # ------------------------------------------------------------------ #
@@ -144,6 +149,7 @@ class GameEngine:
         self.violation_count += int(delta.get("violation_count", 0))
         if "alignment_pct" in delta:
             self.alignment_pct = int(delta["alignment_pct"])
+        self.score += int(delta.get("score", 0))
 
         self.events[idx] = {
             "id": event["id"],

@@ -1,6 +1,7 @@
 export interface ChoiceOption {
   id: string
   label: string
+  score?: number
 }
 
 export interface StoryEvent {
@@ -36,6 +37,7 @@ export interface GameState {
   alignment_pct?: number
   choices_made?: ChoiceRecord[]
   initial_error_count?: number
+  chapter_score?: number
 }
 
 export interface StoryMeta {

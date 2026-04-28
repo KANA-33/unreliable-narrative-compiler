@@ -67,7 +67,11 @@ def make_state() -> dict:
             evt["type"] = e["type"]
         if "choices" in e:
             evt["choices"] = [
-                {"id": c["id"], "label": c["label"]}
+                {
+                    "id": c["id"],
+                    "label": c["label"],
+                    "score": int((c.get("delta") or {}).get("score", 0)),
+                }
                 for c in e["choices"]
             ]
         if "resolved_choice_id" in e:
@@ -86,6 +90,7 @@ def make_state() -> dict:
         "alignment_pct":       getattr(engine, "alignment_pct", 100),
         "choices_made":        list(getattr(engine, "choices_made", [])),
         "initial_error_count": getattr(engine, "initial_error_count", 0),
+        "chapter_score":       int(getattr(engine, "score", 0)),
     }
 
 

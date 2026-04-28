@@ -22,6 +22,11 @@ interface GameStore {
   // turnToChapter() restores the choices the player already made.
   chapterStates: Record<string, GameState>
 
+  // Cross-chapter score that drives the ending: each committed choice adds
+  // its delta.score (typically +1 / -1). Determines positive/zero/negative
+  // ending image selection on EndingScreen.
+  totalScore: number
+
   // Selection
   selectedEventId: string | null
   setSelectedEventId: (id: string | null) => void
@@ -74,6 +79,7 @@ interface CachedGame {
   messages: DialogueMessage[]
   msgCounter: number
   chapterStates: Record<string, GameState>
+  totalScore: number
 }
 
 function loadCompletedChapters(): string[] {
@@ -142,6 +148,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   error: null,
 
   chapterStates: {},
+  totalScore: 0,
 
   selectedEventId: null,
   setSelectedEventId: (selectedEventId) => set({ selectedEventId }),
@@ -283,11 +290,21 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   submitChoice: async (eventId, choiceId) => {
+    // Capture the score delta BEFORE submitting — once the engine resolves
+    // the choice, the choices[] array is gone from the event payload.
+    const evt = get().gameState?.events.find((e) => e.id === eventId)
+    const chosen = evt?.choices?.find((c) => c.id === choiceId)
+    const scoreDelta = chosen?.score ?? 0
+
     set({ isPatching: true, patchError: null })
     get().addSysMsg(`Committing choice ${choiceId} on ${eventId}…`)
     try {
       const { result, state } = await api.submitChoice(eventId, choiceId)
-      set({ gameState: state, isPatching: false })
+      set((s) => ({
+        gameState: state,
+        isPatching: false,
+        totalScore: s.totalScore + scoreDelta,
+      }))
       get().addSysMsg(
         result.status === 'success'
           ? `Choice committed. Timeline intact.`
@@ -374,6 +391,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         selectedEventId: cache.selectedEventId,
         messages: cache.messages ?? [],
         chapterStates: cache.chapterStates ?? {},
+        totalScore: cache.totalScore ?? 0,
         loading: true,
       })
 
@@ -415,6 +433,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         messages: [],
         completedChapters: [],
         chapterStates: {},
+        totalScore: 0,
         isPatching: false,
         patchingPath: null,
         patchError: null,
@@ -445,6 +464,7 @@ function persistNow(s: GameStore) {
     messages: s.messages,
     msgCounter: _id,
     chapterStates: s.chapterStates,
+    totalScore: s.totalScore,
   })
 }
 
@@ -472,7 +492,8 @@ useGameStore.subscribe((state, prev) => {
     state.completedChapters === prev.completedChapters &&
     state.selectedEventId === prev.selectedEventId &&
     state.messages === prev.messages &&
-    state.chapterStates === prev.chapterStates
+    state.chapterStates === prev.chapterStates &&
+    state.totalScore === prev.totalScore
   ) {
     return
   }

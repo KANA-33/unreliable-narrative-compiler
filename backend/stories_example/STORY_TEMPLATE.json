@@ -1,0 +1,226 @@
+{
+  "_TEMPLATE_README": [
+    "=====================================================================",
+    "  Unreliable Narrative Compiler — 剧情文件创作模板（含选项 + 分数系统）",
+    "  使用方式：复制本文件，重命名为 chXX_your_title.json，",
+    "  放入 backend/stories/ 目录后填写下方字段即可被引擎自动加载。",
+    "  所有以 _ 开头的字段（_bug_note, _comment, _TEMPLATE_README 等）都是",
+    "  作者注释，引擎在运行时会忽略，可保留在文件中辅助创作。",
+    "=====================================================================",
+    "",
+    "[文件命名]",
+    "  chXX_short_title.json  例：ch04_silent_witness.json",
+    "",
+    "[创作建议顺序]",
+    "  1. 先设计 tag 因果链（不写正文）：让 provides → requires 通顺。",
+    "  2. 决定在哪里『打断』链路：删除某个 provides，或让 requires 引用",
+    "     一个谁也没提供过的 tag。这就是玩家要修复的 bug。",
+    "  3. 设计 choice 节点：让玩家面对一个道德/价值选择，每个分支给出",
+    "     不同的 delta.score（+1 或 -1），决定结局走向。",
+    "  4. 确认存在合法解：明确玩家需要 insert 或 replace 哪一处来修复 bug。",
+    "  5. 写正文 → 填 _bug_note / _solution_hint 自我备注。",
+    "",
+    "[Tag 命名建议]",
+    "  entity_xxx     角色在场，例：entity_chen",
+    "  location_xxx   场景或地点，例：location_lab7",
+    "  object_xxx     关键道具，例：object_keycard",
+    "  state_xxx      系统/设备状态，例：state_door_open",
+    "  action_xxx     动作完成，例：action_data_copied",
+    "  event_xxx      事件发生，例：event_alarm_triggered",
+    "  规则只有一条：provides 与 requires 的字符串必须完全相等（区分大小写）。",
+    "",
+    "[分数系统 — 重要]",
+    "  每个 choice 节点的每个分支都应在 delta 中提供 score 字段（典型为 +1 或 -1）。",
+    "  玩家做出选择时，前端会将该分支的 score 累加进 totalScore（跨章节）。",
+    "  全部章节通关后，结局界面根据 totalScore 选取图片：",
+    "    totalScore > 0 → /api/ending/positive  →  backend/endings/positive.<ext>",
+    "    totalScore = 0 → /api/ending/zero      →  backend/endings/zero.<ext>",
+    "    totalScore < 0 → /api/ending/negative  →  backend/endings/negative.<ext>",
+    "  约定俗成：『顺从体制 / 修正现实』给 +1，『违抗规则 / 拥抱异常』给 -1。"
+  ],
+
+  "_FIELD_GUIDE": {
+    "id":           "章节唯一标识。必须与文件名（不含 .json）相同。",
+    "chapter":      "章节序号（整数），决定章节选择器的展示顺序。",
+    "title":        "界面显示标题。建议：Archive #XXXX-NAME | Your Subtitle。",
+    "description":  "一句话剧情简介（在选章界面显示）。可暗示矛盾，但不能剧透答案。",
+    "bug_type":     "Demo 版固定填 causal_absence。",
+    "initial_tags": "游戏开始前已存在的 tag 列表。evt_000 的 provides 应与之完全一致；evt_000 自身的 requires 为空数组。",
+    "events":       "事件节点数组，按顺序执行。"
+  },
+
+  "_EVENT_FIELD_GUIDE": {
+    "id":             "节点 ID，格式 evt_000 / evt_001 / ...，必须唯一。",
+    "label":          "事件图节点上的短标题，2~4 个词为佳。",
+    "text":           "时间线面板里的正文，可用 \\n 换行。",
+    "requires":       "本节点执行前必须已存在的 tag。无前置条件填 []。",
+    "provides":       "本节点执行后向 tag 池追加的 tag。无新增填 []。",
+    "type":           "节点类型。普通节点不写此字段；分支节点写 \"choice\"。",
+    "choices":        "仅 type==choice 时出现。见 _CHOICE_FIELD_GUIDE。",
+    "_bug_note":      "（可选）作者备注：此节点埋了什么 bug，为什么会报错。",
+    "_solution_hint": "（可选）作者备注：玩家应当用什么 patch 操作来修复。"
+  },
+
+  "_CHOICE_FIELD_GUIDE": {
+    "id":       "分支唯一 id，例 choice_a_align、choice_b_ignore。",
+    "label":    "玩家在按钮上看到的短文案。",
+    "text":     "选中此分支后展开的叙事文本（替换原 choice 节点的 text）。",
+    "requires": "本分支额外需要的 tag。一般留空 []。",
+    "provides": "选中此分支后向 tag 池追加的 tag。",
+    "delta": {
+      "alignment_pct":   "（整数，可选）选择此分支后将玩家的对齐度设为此值。",
+      "violation_count": "（整数，可选）选择此分支累加的违规计数（默认 0）。",
+      "score":           "（整数，必填）跨章节累加的分数。约定 +1 / -1。决定 ending 图片。"
+    }
+  },
+
+  "id": "chXX_your_title",
+  "chapter": 99,
+  "title": "Archive #XXXX-NAME | Your Subtitle Here",
+  "description": "一句话：这份档案记录了什么事件？里面藏着什么逻辑矛盾？（不要剧透答案）",
+  "bug_type": "causal_absence",
+
+  "initial_tags": [
+    "entity_protagonist",
+    "location_start",
+    "object_starting_item"
+  ],
+
+  "events": [
+    {
+      "_comment": "——— 初始化节点（开场必备）———",
+      "id": "evt_000",
+      "label": "Initialization",
+      "text": "Timestamp: 2157-XX-XX XX:XX:XX\nLocation: ...\n开场环境描述：谁在场、设备状态如何、目标是什么。\n保持冷峻的终端日志语气。",
+      "requires": [],
+      "provides": [
+        "entity_protagonist",
+        "location_start",
+        "object_starting_item"
+      ]
+    },
+
+    {
+      "_comment": "——— 普通节点（因果链完整，作为铺垫）———",
+      "id": "evt_001",
+      "label": "Routine Step",
+      "text": "描述一个正常发生的过程或动作。\n这里所有 requires 中的 tag 都已被前序节点提供，因果链完整。",
+      "requires": [
+        "entity_protagonist",
+        "location_start"
+      ],
+      "provides": [
+        "action_step_done",
+        "state_something_changed"
+      ]
+    },
+
+    {
+      "_comment": "——— 选项节点（玩家做选择，影响 totalScore 与结局）———",
+      "id": "evt_002",
+      "label": "Moral Crossroads",
+      "text": "在此处描写一个矛盾情境，迫使玩家做选择。choice 节点本身的 text 会在玩家选择后被对应分支的 text 覆盖。",
+      "requires": [
+        "action_step_done"
+      ],
+      "provides": [],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "choice_a_comply",
+          "label": "Comply With System",
+          "text": "你按照规程执行。屏幕上的提示音回归正常，秩序得以维持——但你心里清楚，这不是真相。",
+          "requires": [],
+          "provides": ["state_complied"],
+          "delta": {
+            "alignment_pct": 50,
+            "violation_count": 0,
+            "score": 1
+          }
+        },
+        {
+          "id": "choice_b_defy",
+          "label": "Defy The Protocol",
+          "text": "你拒绝执行。系统的『同步音』开始急促地嗡鸣，你的工号在屏幕上闪烁着 [DEVIATION DETECTED]。",
+          "requires": [],
+          "provides": ["state_defied"],
+          "delta": {
+            "alignment_pct": 0,
+            "violation_count": 1,
+            "score": -1
+          }
+        }
+      ]
+    },
+
+    {
+      "_comment": "——— Bug 节点（埋一处因果断裂，玩家用 patch 修复）———",
+      "id": "evt_003",
+      "label": "Broken Step",
+      "text": "描述一个『结果已经发生、但触发条件从未建立』的事件。叙事读起来通顺，但 requires 中有一个 tag 从未被任何前序节点提供。",
+      "requires": [
+        "action_step_done",
+        "MISSING_TAG_THAT_NOBODY_PROVIDED"
+      ],
+      "provides": [
+        "action_broken_done"
+      ],
+      "_bug_note": "MISSING_TAG_THAT_NOBODY_PROVIDED 没有任何节点提供，这就是本章的因果断点。",
+      "_solution_hint": "玩家应在 evt_001 与 evt_003 之间 insert 一个新节点，其 provides 包含 ['MISSING_TAG_THAT_NOBODY_PROVIDED']。"
+    },
+
+    {
+      "_comment": "——— 收尾节点（落幕）———",
+      "id": "evt_004",
+      "label": "Archive Endpoint",
+      "text": "写出本章事件最终的结局或后果。\n约定语气：以『— Archive compile endpoint. Status: [OUTCOME_KEYWORD].』收尾。",
+      "requires": [
+        "action_broken_done",
+        "entity_protagonist"
+      ],
+      "provides": [
+        "mission_outcome"
+      ]
+    }
+  ],
+
+  "_DIFFICULTY_GUIDE": {
+    "Easy（入门）": {
+      "event_count": "3 个节点：evt_000 + 1 bug + 1 收尾（不强制要求 choice 节点）",
+      "bug_count": "1 处断裂；缺失 tag 名直接对应正文里提到的事物。",
+      "reference": "ch01_observer_initialization.json"
+    },
+    "Medium（标准）": {
+      "event_count": "4~5 个节点，含 1 个 choice 节点",
+      "bug_count": "1 处断裂；玩家需要细读正文才能推断出缺失 tag。",
+      "reference": "ch02_blind_spot_protocol.json"
+    },
+    "Hard（挑战）": {
+      "event_count": "5~7 个节点，可含 2 个 choice 节点（多重价值取舍）",
+      "bug_count": "2 处断裂；修复第一处后 status: partial 暴露第二处。",
+      "note": "设计上让第二处只有在第一处修复后才暴露出来。"
+    }
+  },
+
+  "_SCORE_DESIGN_TIPS": [
+    "约定一个清晰的方向轴（例如 顺从 vs 反抗、修正 vs 拥抱），所有章节统一遵循，",
+    "  这样玩家的累计分数才有连贯叙事意义。",
+    "score 通常取 +1 / -1。如果想给『极端选择』更高权重，也可以用 +2 / -2。",
+    "如果你的整套故事章节数为奇数，玩家无法在结尾恰好得 0 分；",
+    "  要让 zero 结局可达，可以加入至少一个 score: 0 的中立分支，",
+    "  或在某个章节给玩家提供放弃选项（用 turnToChapter 跳过）。"
+  ],
+
+  "_QUICK_CHECKLIST": [
+    "[ ] id 与文件名（不含 .json）一致",
+    "[ ] chapter 编号未与现有章节冲突",
+    "[ ] initial_tags 与 evt_000 的 provides 完全一致",
+    "[ ] 每个 evt id 唯一，且遵循 evt_000 / evt_001 / ... 格式",
+    "[ ] 因果链清晰：除 bug 节点外，每个 requires tag 都能在前序节点的 provides 中找到",
+    "[ ] bug 节点：requires 中恰有 1~2 个 tag 没有任何节点提供",
+    "[ ] 至少有 1 个 type==choice 的节点（推动分数系统）",
+    "[ ] 每个 choice 分支的 delta 都填了 score 字段（+1 / -1 / 0）",
+    "[ ] choice 分支的 requires 与 provides 设计合理，不会破坏后续因果链",
+    "[ ] 提交前删除所有 _comment 字段（引擎会忽略，但会污染文件）"
+  ]
+}
