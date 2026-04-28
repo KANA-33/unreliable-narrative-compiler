@@ -13,6 +13,8 @@ export interface StoryEvent {
   type?: 'choice' | 'resolved' | string
   choices?: ChoiceOption[]
   resolved_choice_id?: string
+  parent_event_id?: string
+  content_lost?: boolean
 }
 
 export interface CompileError {

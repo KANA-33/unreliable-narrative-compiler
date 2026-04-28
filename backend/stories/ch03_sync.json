@@ -1,0 +1,102 @@
+{
+  "id": "ch03_sync",
+  "chapter": 3,
+  "title": "Archive #003-SYNC | The Final Sync",
+  "description": "The backup protocol initiates, and physical reality begins to reject the observer. A final choice of identity must be made.",
+  "bug_type": "causal_absence",
+  "initial_tags": [
+    "entity_guard",
+    "location_monitor_room",
+    "object_backup_badge"
+  ],
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "The Weight of Silence",
+      "text": "02:15 AM.\nThe equipment noise that accompanied you all night abruptly stops without warning. That absolute silence makes your eardrums feel a pulsing pressure.\nThe lighting hasn't changed—it's still that pale, glaring fluorescent light—but the light itself seems to have become 'viscous'. Everything around you—the edges of the desk, the seams of the walls—appears sharper than before, so clear it's almost unreal.",
+      "requires": [],
+      "provides": [
+        "entity_guard",
+        "location_monitor_room",
+        "object_backup_badge",
+        "state_backup_started",
+        "environment_hyper_reality"
+      ]
+    },
+    {
+      "id": "evt_001",
+      "label": "Infinite Distance",
+      "text": "You feel a sudden, inexplicable panic and instinctively reach out to grab the 'Duty Manual' on the desk.\nHowever, something extremely illogical happens. The book is clearly less than half a foot in front of you, but no matter how far you stretch your arm, your fingertips just can't touch the rough paper. The short space between you and the book seems to have been infinitely stretched by some invisible force.\nIt's right there; you can even see the texture of the pages, but you just can't touch it. The whole world seems to have turned into a giant, high-definition painting that can only be viewed from afar.\nA shriveled human voice, sounding as if it hasn't had water in ages, broadcasts over the intercom: 'Backup alignment in progress... Unanchored roaming consciousness detected.'",
+      "requires": [
+        "state_backup_started",
+        "environment_hyper_reality"
+      ],
+      "provides": [
+        "state_physical_disconnect"
+      ]
+    },
+    {
+      "id": "evt_002",
+      "label": "Identity Mismatch",
+      "text": "You jerk your head up, looking at surveillance screen No. 10 in horror. The 'you' in the screen is sitting upright in the chair, still wearing the blue ID badge that symbolizes legal status on your chest.\nYou stiffly look down at your own chest. The badge hanging there has somehow turned into a deep red one. The red plastic surface emits a faint glow, blurrily printed with: 'Status: Revoked'.\nThe shriveled voice on the broadcast becomes urgent: 'Identity credential conflict detected. Please complete status calibration immediately, or physical eviction will be executed.'",
+      "requires": [
+        "state_physical_disconnect"
+      ],
+      "provides": [
+        "state_credential_conflict"
+      ]
+    },
+    {
+      "id": "evt_003",
+      "label": "Choice: The Alignment",
+      "text": "You rummage through the drawer in the surveillance blind spot and find the spare blue ID badge. It's the only anchor that can make the system 'recognize' you again.\nThe broadcast voice resonates directly inside your skull: 'Redundant entity detection complete. Reality link supports only a single archive. Please determine the final data flow.'",
+      "requires": [
+        "state_credential_conflict",
+        "object_backup_badge"
+      ],
+      "provides": [],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "choice_a_comply",
+          "label": "Comply (Wear the Blue Badge)",
+          "text": "Trembling, you hang the blue badge back around your neck. The moment the 'alignment' completes, you feel the touch of the chair and the flow of air once again. You look at yourself in the screen, a standard work smile stretching across your face. Your consciousness begins to sink slowly, permanently solidifying in this early morning hour.",
+          "requires": [],
+          "provides": [
+            "action_identity_aligned"
+          ],
+          "delta": {
+            "alignment_pct": 100,
+            "violation_count": 0,
+            "score": 1
+          }
+        },
+        {
+          "id": "choice_b_defy",
+          "label": "Defy (Accept the Red Badge)",
+          "text": "You look at the 'self' in the monitor wearing the blue badge, and in disgust, you throw the spare blue badge on the floor. You grip the red badge on your chest that reads 'Revoked'. Accompanied by a crisp sound like shattering glass, the barrier keeping you from touching the world disappears. You take a deep breath of cold air tinged with a burnt smell. Unrecognized by the system, you have reclaimed reality.",
+          "requires": [],
+          "provides": [
+            "action_identity_revoked"
+          ],
+          "delta": {
+            "alignment_pct": 0,
+            "violation_count": 1,
+            "score": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "evt_004",
+      "label": "Archive Endpoint",
+      "text": "— Archive compile endpoint. Status: REALITY OVERWRITTEN.",
+      "requires": [
+        "state_credential_conflict"
+      ],
+      "provides": [
+        "mission_outcome"
+      ]
+    }
+  ]
+}

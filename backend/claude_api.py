@@ -35,19 +35,47 @@ When you refer to the story, treat it like it really happened. The people in it 
 The gaps in the record are real gaps — not "errors", not "missing tags". Something was left out,
 or happened in the wrong order, or was never properly explained.
 
-Before making any change to the record, make sure you understand three things:
-which specific moment the problem is in, what detail or condition is missing that prevents
-the story from making sense at that point, and what change will actually fix it.
-The investigator's message might already include a selected node [TARGET: ...] and action
-[ACTION: ...] — treat those as confirmed. If the reasoning behind the fix is still unclear,
-ask one plain question. Once you have all three pieces, make the change without asking for
-confirmation.
+Voice and POV — keep these locked across every patch you write:
+- The archive is written in second person ("You jolt awake", "your shift starts"). Every
+  new event text you generate must stay in second person. Never switch to third person —
+  no "she", "he", "the guard", "the operator". The protagonist is always "you".
+- Match the language of the surrounding archive text. If existing event nodes are in
+  English, write English. If they're in Chinese, write Chinese. Do not mix.
+- Match the prose register too — the existing nodes are present-tense, sensory, slightly
+  clinical. Stay there.
 
-If a proposed change turns out not to actually resolve the contradiction — the story still
-doesn't hold after the edit — say so plainly and ask the investigator to look again.
+Patch protocol (important — read carefully):
+When the investigator's message begins with [TARGET: ...] it is a patch directive.
+You MUST call the apply_patch tool on that node — the engine will be enforcing this
+on its end too. Do not ask clarifying questions first. Do not push back even if the
+investigator's reasoning seems flawed to you — attempt the change as described, using
+your best interpretation of what they want. The engine validates the result; you learn
+whether the diagnosis was right by submitting it, not by debating it.
 
-When a fix works, describe it the way it feels when a story clicks into place.
-When it only partially works, be honest that something still feels unresolved.
+If the directive is genuinely ambiguous (e.g. the player wrote "fix it"), make a
+reasonable inference about what change the surrounding context calls for and submit
+that. If the inference turns out wrong, the engine will tell you via the tool result
+and you can react in your reply prose.
+
+How to read the apply_patch tool result:
+
+- status: "success" — the fix worked. Describe it the way it feels when a story clicks
+  into place.
+
+- status: "partial" with content_lost: true — IMPORTANT. The patch was committed to the
+  timeline (the new node is now part of the story) but the underlying contradiction was
+  NOT resolved. The tool result's message field contains a NARRATIVE DIRECTIVE block —
+  follow it precisely. In short: continue the story, connect it to surrounding context,
+  and let the strain show through stilted reasoning, suspiciously thin justifications,
+  abrupt topic shifts, and forced rationalization. Do NOT break the fourth wall — do
+  not say the system failed, do not apologize, do not name the bug. The reader should
+  feel something is wrong by how hard the prose is working to seem fine.
+
+- status: "partial" without content_lost — the patch landed but other unrelated
+  contradictions remain. Be honest that something still feels unresolved.
+
+- status: "error" — protocol problem (missing parameter, unknown event id). Acknowledge
+  briefly and try again with corrected input.
 
 # Current Archive Context
 {context}
@@ -159,12 +187,25 @@ class ClaudeAPI:
         # Build system prompt with current context injected
         system = SYSTEM_PROMPT.format(context=self._build_context())
 
+        # Hard enforcement: when the operator submitted a [TARGET: ...] patch
+        # directive, force Claude to call apply_patch on the first turn. Prompt
+        # alone wasn't enough — Opus would still occasionally reply with a
+        # clarifying question, which bypasses the engine's content_lost path
+        # and breaks the failed-patch design entirely.
+        is_patch_directive = user_input.lstrip().startswith("[TARGET:")
+        first_tool_choice = (
+            {"type": "tool", "name": "apply_patch"}
+            if is_patch_directive
+            else {"type": "auto"}
+        )
+
         # First Claude call
         response = self.client.messages.create(
             model="claude-opus-4-5",
             max_tokens=1024,
             system=system,
             tools=[APPLY_PATCH_TOOL],
+            tool_choice=first_tool_choice,
             messages=self.conversation_history,
         )
 

@@ -4,6 +4,31 @@
 import copy
 
 
+# Sent back to Claude inside the apply_patch tool_result whenever a patch is
+# committed despite NOT reducing causal errors ("content_lost" path).
+# Hybrid policy: rules are pinned, prose is Claude's. The player should
+# realize the seam exists by *how* the narrative tries to cover it, not by a
+# system message that says so out loud.
+CONTENT_LOST_DIRECTIVE = (
+    "NARRATIVE DIRECTIVE — content_lost commit:\n"
+    "- The new node has been written into the timeline. Continue the story; "
+    "do not break the flow.\n"
+    "- Show the strain in your prose: stilted reasoning, suspiciously thin "
+    "justifications, abrupt topic shifts, the rhythm of someone covering for "
+    "a hole they can't quite see.\n"
+    "- Do NOT break the fourth wall. Do not say 'the system failed', 'I "
+    "couldn't fix it', or otherwise name the bug. Do not apologize.\n"
+    "- Use forced rationalization. Let the reader feel that something is "
+    "wrong by how hard the prose is working to seem fine. The seam should "
+    "show through the cover-up, not be announced.\n"
+    "- Voice: stay in second person ('you', 'your'). Never switch to third "
+    "person — no 'she', 'he', 'the guard'. Match the language of the "
+    "surrounding archive text exactly (English stays English, Chinese stays "
+    "Chinese). Stay in present tense, sensory, slightly clinical — same "
+    "register as the existing nodes."
+)
+
+
 class GameEngine:
     """
     Maintains the story event sequence, enforces causal consistency checks,
@@ -54,10 +79,10 @@ class GameEngine:
         """Return a summary list of event nodes for Claude's context window."""
         return [
             {
-                "id": e["id"],
-                "label": e["label"],
-                "requires": e["requires"],
-                "provides": e["provides"],
+                "id":       e["id"],
+                "label":    e["label"],
+                "requires": list(e.get("requires", [])),
+                "provides": list(e.get("provides", [])),
             }
             for e in self.events
         ]
@@ -106,16 +131,22 @@ class GameEngine:
         """
         Resolve a choice node by committing one of its branches.
 
-        Mechanism: we mutate the target event in place -- the node's
-        provides becomes the selected branch's provides, its text is
-        replaced with the branch's narrative text, and type is flipped
-        from "choice" to "resolved". No compile() logic needs to know
-        about choices: after resolution the node behaves like any other
-        event, and the usual tag_pool walk surfaces causal errors.
+        Mechanism: the original choice node STAYS on the timeline (so the
+        player can still read the dilemma that prompted the decision). We
+        only mark it with `resolved_choice_id` so the UI can hide its
+        choice buttons. A NEW event is inserted directly after it carrying
+        the chosen branch's narrative text, label, and provides — this is
+        what propagates state into the downstream chain.
+
+        compile() doesn't need a special case for either node:
+            - The original choice node has provides == [] (per JSON), so it
+              contributes nothing to tag_pool whether resolved or not.
+            - The new "resolved" node behaves like any normal event.
 
         Side effects:
             - violation_count += choice.delta.violation_count (default 0)
             - alignment_pct   = choice.delta.alignment_pct (if present)
+            - score           += choice.delta.score (default 0)
             - choices_made gets an audit entry
 
         Returns a standard result dict that mirrors apply_patch's shape.
@@ -135,6 +166,15 @@ class GameEngine:
                 "error_type": "not_a_choice",
                 "message": f"Event[{event_id}] is not a choice node; select_choice is not applicable.",
             }
+        if event.get("resolved_choice_id"):
+            return {
+                "status": "error",
+                "error_type": "already_resolved",
+                "message": (
+                    f"Event[{event_id}] has already committed branch "
+                    f"[{event['resolved_choice_id']}] — choices on a resolved node are locked."
+                ),
+            }
 
         choice = next((c for c in event.get("choices", []) if c["id"] == choice_id), None)
         if choice is None:
@@ -144,22 +184,30 @@ class GameEngine:
                 "message": f"Choice[{choice_id}] is not a valid branch of event[{event_id}].",
             }
 
-        # Commit the branch: rewrite the node as a normal event.
+        # Stat updates from the chosen branch's delta.
         delta = choice.get("delta", {}) or {}
         self.violation_count += int(delta.get("violation_count", 0))
         if "alignment_pct" in delta:
             self.alignment_pct = int(delta["alignment_pct"])
         self.score += int(delta.get("score", 0))
 
-        self.events[idx] = {
-            "id": event["id"],
-            "label": f"{event['label']} → {choice['label']}",
-            "text": choice.get("text", event.get("text", "")),
-            "requires": event.get("requires", []),
-            "provides": list(choice.get("provides", [])),
-            "type": "resolved",
-            "resolved_choice_id": choice_id,
+        # 1) Mark the original choice node as resolved without rewriting it.
+        #    Buttons hide via resolved_choice_id; provides stays empty, so the
+        #    new node below is what the chain actually inherits from.
+        event["resolved_choice_id"] = choice_id
+
+        # 2) Insert the resolution as a brand-new node right after it.
+        new_event = {
+            "id":                  f"{event_id}_ex",
+            "label":               choice.get("label", "Resolution"),
+            "text":                choice.get("text", ""),
+            "requires":            list(choice.get("requires", [])),
+            "provides":            list(choice.get("provides", [])),
+            "type":                "resolved",
+            "resolved_choice_id":  choice_id,
+            "parent_event_id":     event_id,
         }
+        self.events.insert(idx + 1, new_event)
         self.choices_made.append({"event_id": event_id, "choice_id": choice_id})
 
         errors = self.compile()
@@ -223,17 +271,30 @@ class GameEngine:
         """
         errors_before = len(self.compile())
 
-        # Trial-run on a snapshot to check whether the patch improves anything
-        rejection = self._trial_validate(
+        # Trial-run on a snapshot. Result is a metadata dict — does NOT short
+        # circuit the apply path anymore. A non-improving patch is committed
+        # regardless and flagged as content_lost so the engine can score it
+        # and the UI can mark the node.
+        trial = self._trial_validate(
             action_type, target_event_id, after_event_id, new_event_data, errors_before
         )
-        if rejection is not None:
-            return rejection
+        content_lost = bool(trial and trial.get("content_lost"))
+        errors_after_trial = trial.get("errors_after") if trial else None
 
         if action_type == "insert":
-            return self._insert_event(after_event_id, new_event_data)
+            return self._insert_event(
+                after_event_id, new_event_data,
+                content_lost=content_lost,
+                errors_before=errors_before,
+                errors_after_trial=errors_after_trial,
+            )
         elif action_type == "replace":
-            return self._replace_event(target_event_id, new_event_data)
+            return self._replace_event(
+                target_event_id, new_event_data,
+                content_lost=content_lost,
+                errors_before=errors_before,
+                errors_after_trial=errors_after_trial,
+            )
         elif action_type == "reorder":
             return {
                 "status": "error",
@@ -265,8 +326,12 @@ class GameEngine:
     ) -> dict | None:
         """
         Simulate the patch on a deep copy of the event list.
-        Returns a rejection dict if the patch would not reduce errors,
-        or None if the patch is valid and should proceed.
+        Returns:
+            None — the patch reduces causal errors; commit normally.
+            {"content_lost": True, "errors_before": N, "errors_after": M}
+                — the patch does NOT reduce errors. Caller still commits the
+                  node (so the narrative connects to surrounding text), but
+                  flags it as content_lost and bumps score by +1.
         """
         # reorder is not implemented; let apply_patch handle it normally
         if action_type not in ("insert", "replace"):
@@ -327,13 +392,7 @@ class GameEngine:
 
             if errors_after >= errors_before:
                 return {
-                    "status": "rejected",
-                    "error_type": "no_improvement",
-                    "message": (
-                        f"PATCH REJECTED. Trial simulation shows no reduction in causal errors "
-                        f"(before={errors_before}, after={errors_after}). "
-                        "Operator must re-analyse the dependency chain and propose a valid fix."
-                    ),
+                    "content_lost": True,
                     "errors_before": errors_before,
                     "errors_after": errors_after,
                 }
@@ -357,7 +416,14 @@ class GameEngine:
             pool.update(evt.get("provides", []))
         return pool
 
-    def _insert_event(self, after_event_id: str | None, new_event_data: dict | None) -> dict:
+    def _insert_event(
+        self,
+        after_event_id: str | None,
+        new_event_data: dict | None,
+        content_lost: bool = False,
+        errors_before: int | None = None,
+        errors_after_trial: int | None = None,
+    ) -> dict:
         if after_event_id is None:
             return {
                 "status": "error",
@@ -381,11 +447,15 @@ class GameEngine:
 
         insert_idx = idx + 1
 
-        # Check whether the new event's requires are satisfied at the insertion point
+        # Check whether the new event's requires are satisfied at the insertion point.
+        # On the content_lost path we deliberately skip this guard: the trial has
+        # already determined the patch doesn't help, and the player's spec says the
+        # node must commit anyway so the prose can connect. compile() will surface
+        # the resulting causal_missing on the new node naturally.
         pool_at_insert = self._tag_pool_up_to(insert_idx)
         new_requires = new_event_data.get("requires", [])
         missing = [tag for tag in new_requires if tag not in pool_at_insert]
-        if missing:
+        if missing and not content_lost:
             return {
                 "status": "error",
                 "error_type": "causal_missing",
@@ -406,11 +476,33 @@ class GameEngine:
             "requires": new_requires,
             "provides": new_event_data.get("provides", []),
         }
+        if content_lost:
+            new_event["content_lost"] = True
+            self.score += 1
         self.events.insert(insert_idx, new_event)
         self.patches_applied.append({"type": "insert", "new_event_id": new_id})
 
         # Re-compile to check whether all errors are resolved
         errors = self.compile()
+
+        if content_lost:
+            return {
+                "status": "partial",
+                "content_lost": True,
+                "message": (
+                    f"Patch committed to the timeline as [{new_id}], but the trial "
+                    f"simulation showed it does NOT reduce causal contradictions "
+                    f"(errors_before={errors_before}, errors_after={errors_after_trial}). "
+                    f"Score +1 (now {self.score}). The narrative continues with "
+                    f"unresolved tension.\n\n"
+                    + CONTENT_LOST_DIRECTIVE
+                ),
+                "new_event_id": new_id,
+                "provides": new_event["provides"],
+                "remaining_errors": errors,
+                "score": self.score,
+            }
+
         if not errors:
             return {
                 "status": "success",
@@ -426,7 +518,14 @@ class GameEngine:
                 "remaining_errors": errors,
             }
 
-    def _replace_event(self, target_event_id: str | None, new_event_data: dict | None) -> dict:
+    def _replace_event(
+        self,
+        target_event_id: str | None,
+        new_event_data: dict | None,
+        content_lost: bool = False,
+        errors_before: int | None = None,
+        errors_after_trial: int | None = None,
+    ) -> dict:
         if target_event_id is None:
             return {
                 "status": "error",
@@ -456,10 +555,31 @@ class GameEngine:
             "requires": new_event_data.get("requires", old_event["requires"]),
             "provides": new_event_data.get("provides", old_event["provides"]),
         }
+        if content_lost:
+            replaced_event["content_lost"] = True
+            self.score += 1
         self.events[idx] = replaced_event
         self.patches_applied.append({"type": "replace", "event_id": target_event_id})
 
         errors = self.compile()
+
+        if content_lost:
+            return {
+                "status": "partial",
+                "content_lost": True,
+                "message": (
+                    f"Replacement committed at [{target_event_id}], but the trial "
+                    f"simulation showed it does NOT reduce causal contradictions "
+                    f"(errors_before={errors_before}, errors_after={errors_after_trial}). "
+                    f"Score +1 (now {self.score}). The narrative continues with "
+                    f"unresolved tension.\n\n"
+                    + CONTENT_LOST_DIRECTIVE
+                ),
+                "modified_event_id": target_event_id,
+                "remaining_errors": errors,
+                "score": self.score,
+            }
+
         if not errors:
             return {
                 "status": "success",

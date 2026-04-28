@@ -19,7 +19,7 @@ export default function GameScreen() {
   const isComplete = useGameStore((s) => {
     const gs = s.gameState
     if (!gs?.is_complete) return false
-    return !gs.events.some((e) => e.type === 'choice')
+    return !gs.events.some((e) => e.type === 'choice' && !e.resolved_choice_id)
   })
   const markChapterCompleted = useGameStore((s) => s.markChapterCompleted)
   const setScreen = useGameStore((s) => s.setScreen)

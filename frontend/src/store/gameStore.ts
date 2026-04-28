@@ -237,6 +237,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       : null
 
     const errorCountBefore = gameState.errors.length
+    const chapterScoreBefore = gameState.chapter_score ?? 0
+    const patchesAppliedBefore = gameState.patches_applied
 
     set({ isPatching: true, patchingPath, patchError: null })
     get().addSysMsg(`Submitting patch for ${selectedEventId}…`)
@@ -245,18 +247,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     try {
       const { reply, state } = await api.chat(directive)
-      const accepted = state.errors.length < errorCountBefore
 
-      set({
+      // The chat round is treated as one patch attempt for UI purposes, even
+      // though Claude may invoke apply_patch multiple times internally.
+      // chapter_score only changes inside chat via failed-but-committed
+      // patches (choices go through submitChoice), so the diff exactly counts
+      // how many content_lost commits Claude made this round.
+      const failedPatchDelta = (state.chapter_score ?? 0) - chapterScoreBefore
+      const errorsReduced = state.errors.length < errorCountBefore
+      const contentLostCommitted = failedPatchDelta > 0
+      const accepted = errorsReduced && !contentLostCommitted
+      // If Claude declined to call apply_patch at all (it just sent text back
+      // — usually a clarifying question), patches_applied won't have moved.
+      // Surface that reply in the chat panel rather than as a red error toast,
+      // since it's prose, not an engine rejection.
+      const toolWasInvoked = state.patches_applied > patchesAppliedBefore
+
+      set((s) => ({
         isPatching: false,
         patchingPath: null,
-        patchError: accepted ? null : reply.trim() || 'Patch rejected — causal reasoning insufficient.',
+        // Only surface patchError when the engine actually rejected something
+        // (a real protocol/structural failure). A content_lost commit and a
+        // no-tool-call reply both leave the toast empty.
+        patchError: !toolWasInvoked || accepted || contentLostCommitted
+          ? null
+          : reply.trim() || 'Patch rejected — causal reasoning insufficient.',
         gameState: state,
-      })
+        totalScore: s.totalScore + failedPatchDelta,
+        // No-tool-call reply: thread it into the dialogue messages so the
+        // player can read what Claude actually asked.
+        messages: !toolWasInvoked && reply.trim()
+          ? [...s.messages, { id: nextId(), role: 'compiler', text: reply }]
+          : s.messages,
+      }))
 
-      get().addSysMsg(accepted
-        ? `Patch accepted. Causal link restored at ${selectedEventId}.`
-        : `Patch rejected for ${selectedEventId}.`,
+      get().addSysMsg(
+        !toolWasInvoked
+          ? `Compiler returned a question instead of a patch.`
+          : accepted
+            ? `Patch accepted. Causal link restored at ${selectedEventId}.`
+            : contentLostCommitted
+              ? `Patch committed at ${selectedEventId}.`
+              : `Patch rejected for ${selectedEventId}.`,
       )
     } catch (e) {
       set({

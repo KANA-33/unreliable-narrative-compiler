@@ -1,0 +1,112 @@
+{
+  "id": "ch02_blind_spot",
+  "chapter": 2,
+  "title": "Archive #002-BLIND | The Blind Spot",
+  "description": "A system directive forces you out of your seat. But how do you run through a sealed door?",
+  "bug_type": "causal_absence",
+  "initial_tags": [
+    "entity_guard",
+    "location_monitor_room",
+    "state_door_sealed"
+  ],
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Sealed Protocol",
+      "text": "01:45 AM. The air in the monitor room has grown somewhat stale. You try to push open the heavy electronic pressurized door to get some fresh air in the corridor. But the door doesn't budge. The status screen next to the handle flashes in cold red letters: [STATUS: SEALED - SYNC IN PROGRESS].\nThe manual explicitly warns: during the backup period, the duty room will enter a state of absolute physical lockdown, strictly prohibiting any form of entry or exit. You are trapped on this pale island made up of sixteen screens.",
+      "requires": [],
+      "provides": [
+        "entity_guard",
+        "location_monitor_room",
+        "state_door_sealed"
+      ]
+    },
+    {
+      "id": "evt_001",
+      "label": "System Directive",
+      "text": "Suddenly, the broadcast speakers in the four corners of the room emit a harsh, static microphone screech. Following that, a cold, mechanical electronic voice completely devoid of human emotion echoes against the marble walls:\n'Attention. Logical deviation detected in Sector 07. Avalon-class heating main pipe pressure reading abnormal. Directive: Execute manual pressure relief calibration. Location: Sector 07 blind spot. Warning: Failure to complete within sixty seconds will compromise the overall structural stability of the building. Act immediately.'",
+      "requires": [
+        "location_monitor_room"
+      ],
+      "provides": [
+        "state_order_received"
+      ]
+    },
+    {
+      "id": "evt_002",
+      "label": "The Leap",
+      "text": "There is no time to hesitate. You dash out the door almost instantly, the sensor lights illuminating one by one as you sprint.\nWithin half a minute, you are standing in the blind spot of camera No. 7 at the end of the corridor. The pitch-black metal pipe labeled 'Avalon' is right in front of you, emitting a low vibration.",
+      "requires": [
+        "state_order_received",
+        "state_door_unlocked"
+      ],
+      "provides": [
+        "location_sector_07"
+      ],
+      "_bug_note": "The player is currently in 'state_door_sealed'. This node requires 'state_door_unlocked' to logically allow the player to reach Sector 07. This triggers the compiler error.",
+      "_solution_hint": "Player must insert a patch node between evt_001 and evt_002 that provides ['state_door_unlocked'] (e.g., swiping an emergency override card)."
+    },
+    {
+      "id": "evt_003",
+      "label": "Choice: The Frozen Valve",
+      "text": "You reach out to turn the pressure relief valve. However, the moment your fingertips touch the metal, a bone-chilling cold pierces through your skin.\nThis is highly illogical—if this is a heating pipe, it shouldn't be colder than dry ice. The electronic voice on the broadcast sounds again, its frequency becoming rapid and sharp: 'Entity contact detected. Calibration countdown: 10, 9... Turn the valve.'",
+      "requires": [
+        "location_sector_07"
+      ],
+      "provides": [],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "choice_a_comply",
+          "label": "Turn the Valve",
+          "text": "You bite the bullet and endure the biting cold radiating from your palm, desperately turning the valve clockwise. With a heavy metallic clunk, the pressure gauge returns to zero. The electronic voice returns to its calm state: 'Calibration successful. Reality consistency restored.'",
+          "requires": [],
+          "provides": [
+            "action_valve_turned"
+          ],
+          "delta": {
+            "alignment_pct": 100,
+            "violation_count": 0,
+            "score": 1
+          }
+        },
+        {
+          "id": "choice_b_defy",
+          "label": "Refuse to Touch",
+          "text": "You yank your hand back; a stark white frostbite mark has already formed on your palm. 'This isn't a heating pipe at all!' you shout down the empty corridor. The electronic voice instantly morphs into a piercing alarm: 'Subjective violation detected. Logging deviation case...'",
+          "requires": [],
+          "provides": [
+            "action_valve_ignored"
+          ],
+          "delta": {
+            "alignment_pct": 0,
+            "violation_count": 1,
+            "score": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "evt_004",
+      "label": "Re-entry",
+      "text": "You stumble back to the monitor room. Regardless of what just happened at the valve, the air in the building seems to have thinned, carrying the faint, stale scent of burnt electronic components.\nYou sit back down in the yellowed office chair. As the pale light from the screens hits your face, it surprisingly gives you a fleeting illusion of being reborn.",
+      "requires": [
+        "location_sector_07"
+      ],
+      "provides": [
+        "state_return_to_desk"
+      ]
+    },
+    {
+      "id": "evt_005",
+      "label": "Archive Endpoint",
+      "text": "— Archive compile endpoint. Status: SPATIAL CONTINUITY FORCED.",
+      "requires": [
+        "state_return_to_desk"
+      ],
+      "provides": [
+        "mission_outcome"
+      ]
+    }
+  ]
+}

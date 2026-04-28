@@ -76,6 +76,10 @@ def make_state() -> dict:
             ]
         if "resolved_choice_id" in e:
             evt["resolved_choice_id"] = e["resolved_choice_id"]
+        if "parent_event_id" in e:
+            evt["parent_event_id"] = e["parent_event_id"]
+        if e.get("content_lost"):
+            evt["content_lost"] = True
         events.append(evt)
 
     complete = engine.is_complete()

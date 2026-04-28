@@ -56,14 +56,26 @@ function EventEntry({
   const divRef  = useRef<HTMLDivElement>(null)
   const [boxSize, setBoxSize] = useState<{ w: number; h: number } | null>(null)
 
-  // Measure element size for the sketch box
+  // Measure element size for the sketch box. Use a ResizeObserver so the box
+  // tracks the div as it grows during the Typewriter animation (and any other
+  // layout shift, like font loading or window resize). A one-shot measure on
+  // selection would lock the box at whatever height existed in that frame —
+  // usually before the typewriter has finished, leaving the border trailing
+  // far short of the actual text.
   useLayoutEffect(() => {
-    if (isSelected && divRef.current) {
-      const r = divRef.current.getBoundingClientRect()
-      setBoxSize({ w: r.width, h: r.height })
-    } else {
+    if (!isSelected || !divRef.current) {
       setBoxSize(null)
+      return
     }
+    const el = divRef.current
+    const update = () => {
+      const r = el.getBoundingClientRect()
+      setBoxSize({ w: r.width, h: r.height })
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [isSelected])
 
   // Scroll into view when selected from the graph side
@@ -131,8 +143,11 @@ function EventEntry({
         )}
       </p>
 
-      {/* Choice branches — only on unresolved choice nodes */}
-      {evt.type === 'choice' && evt.choices && evt.choices.length > 0 && (
+      {/* Choice branches — only on unresolved choice nodes. Once a choice
+          has been committed the original prompt node still shows (so the
+          dilemma stays readable) but its buttons lock and the resolution
+          appears as a new node directly beneath it. */}
+      {evt.type === 'choice' && evt.choices && evt.choices.length > 0 && !evt.resolved_choice_id && (
         <div className="mt-3 flex flex-wrap gap-2">
           {evt.choices.map((c) => (
             <button

@@ -1,0 +1,104 @@
+{
+  "id": "ch01_the_sync_protocol",
+  "chapter": 1,
+  "title": "Archive #001-INIT | The Sync Protocol",
+  "description": "Your first night shift. A subtle desync occurs between reality and the monitors, initiating the alignment protocol.",
+  "bug_type": "none",
+  "initial_tags": [
+    "entity_guard",
+    "location_monitor_room",
+    "object_red_pen",
+    "object_water_cup"
+  ],
+  "events": [
+    {
+      "id": "evt_000",
+      "label": "Shift Start",
+      "text": "Timestamp: 2026-XX-XX 01:00:00\nYou jolt awake, your vision still blurry, the bizarre, noisy echoes from your brief nap lingering in your ears. You rub your stiff neck, the residual warmth from the extinguished corridor sensor lights still hanging in the air. You steady your breathing, put the blue ID badge back on, and sink into the yellowed office chair.\nIn front of you is a monitor matrix made of sixteen split screens, casting a pale, cold light on your face. To your right sits a battered copy of the 'Duty Manual', a red pen, and a cup of water that went cold long ago.",
+      "requires": [],
+      "provides": [
+        "entity_guard",
+        "location_monitor_room",
+        "object_red_pen",
+        "object_water_cup"
+      ]
+    },
+    {
+      "id": "evt_001",
+      "label": "Monitor Anomaly",
+      "text": "You habitually begin a new round of patrols, your eyes practiced as they sweep across screen No. 10 (the monitor for this very room)—an instinctive action repeated countless times to fight off drowsiness during night shifts.\nBut this time, your gaze freezes. In screen No. 10, you suddenly reach out and knock the red pen off the desk. The footage freezes the exact moment the pen hits the floor. Yet, in reality, the red pen lies quietly on the desk, completely untouched. You catch a glimpse of the red-circled text in the manual: 'Let reality mimic the monitor.'",
+      "requires": [
+        "entity_guard",
+        "location_monitor_room",
+        "object_red_pen"
+      ],
+      "provides": [
+        "state_pen_desync"
+      ]
+    },
+    {
+      "id": "evt_002",
+      "label": "First Alignment",
+      "text": "You take a deep breath, forcing yourself to calm down. As your fingertips touch the cold plastic casing of the red pen, a thin layer of sweat inexplicably breaks out on your palms. You give it a gentle nudge, and the pen rolls off.\n'Click.'\nThe impact echoes through the dead-silent room, sounding more like a massive gear finally slotting into its rightful place. The monitor matrix flickers, and the video feed resumes its normal flow.",
+      "requires": [
+        "state_pen_desync"
+      ],
+      "provides": [
+        "action_pen_dropped",
+        "state_system_aligned"
+      ]
+    },
+    {
+      "id": "evt_003",
+      "label": "Gravity Inversion",
+      "text": "01:30 AM. You take a sip of water and place the cup flat on the desk. Something eerie happens—though the cup sits perfectly straight, the water level inside slants 45 degrees to the left, as if gravity has vanished. You whip your head toward monitor No. 10, but the cup on the screen looks completely normal, the water perfectly level.",
+      "requires": [
+        "state_system_aligned",
+        "object_water_cup"
+      ],
+      "provides": [],
+      "type": "choice",
+      "choices": [
+        {
+          "id": "ex0",
+          "label": "Right the Cup",
+          "text": "Suppressing your unease, you follow what you see on the monitor, forcefully propping up the bottom of the cup to artificially level the water surface in reality. After a faint hum of static, the oppressive feeling of being watched dissipates.",
+          "requires": [],
+          "provides": [
+            "action_cup_aligned"
+          ],
+          "delta": {
+            "alignment_pct": 100,
+            "violation_count": 0,
+            "score": 1
+          }
+        },
+        {
+          "id": "ex1",
+          "label": "Ignore",
+          "text": "You don't touch the cup. 'If the me in the monitor is correct, then what am I right now?' You sit in your chair, trembling. The system emits an extremely faint warning beep, as if logging your inaction.",
+          "requires": [],
+          "provides": [
+            "action_cup_ignored"
+          ],
+          "delta": {
+            "alignment_pct": 50,
+            "violation_count": 1,
+            "score": -1
+          }
+        }
+      ]
+    },
+    {
+      "id": "evt_004",
+      "label": "Archive Endpoint",
+      "text": "— Archive compile endpoint. Status: INITIAL ALIGNMENT LOGGED.",
+      "requires": [
+        "entity_guard"
+      ],
+      "provides": [
+        "mission_outcome"
+      ]
+    }
+  ]
+}

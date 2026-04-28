@@ -46,7 +46,8 @@ export default function DossierNotes() {
   const { gameState } = useGameStore()
   if (!gameState) return null
 
-  const { errors, is_complete, patches_applied } = gameState
+  const { errors, is_complete, patches_applied, events } = gameState
+  const hasContentLost = events.some((e) => e.content_lost)
 
   return (
     <div className="relative w-full h-full" style={{ transform: 'rotate(-3.5deg)' }}>
@@ -132,6 +133,20 @@ export default function DossierNotes() {
                 </span>
               </li>
             </>
+          )}
+
+          {/* Content-lost summary — rendered whenever any node has been
+              committed under the content_lost path. Single fixed line,
+              no per-node detail. */}
+          {hasContentLost && (
+            <li className="flex gap-2 items-start pt-2 mt-2 border-t border-dashed border-amber-900/25">
+              <span className="material-symbols-outlined flex-shrink-0 marker-red"
+                    style={{ fontSize: 18 }}>broken_image</span>
+              <span className="marker-red text-[13px] leading-tight font-bold tracking-wide"
+                    style={{ transform: 'rotate(-0.4deg)', display: 'inline-block' }}>
+                当前节点内容遗失
+              </span>
+            </li>
           )}
         </ul>
       </div>

@@ -11,7 +11,7 @@ export default function Header() {
   // every choice node has actually been resolved.
   const isComplete =
     !!gameState?.is_complete &&
-    !gameState.events.some((e) => e.type === 'choice')
+    !gameState.events.some((e) => e.type === 'choice' && !e.resolved_choice_id)
 
   const sortedStories = useMemo(
     () => [...stories].sort((a, b) => a.chapter - b.chapter),
