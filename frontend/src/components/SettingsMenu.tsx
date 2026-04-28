@@ -38,7 +38,7 @@ export default function SettingsMenu({ iconSize = 20, className = '' }: Props) {
   const handleRestart = async () => {
     if (restarting) return
     const ok = window.confirm(
-      'Restart the game? Your current progress and cached choices will be cleared.',
+      'Restart the game? Your current progress will be cleared and you will return to chapter 1.',
     )
     if (!ok) return
     setRestarting(true)

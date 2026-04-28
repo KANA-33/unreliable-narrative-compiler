@@ -31,44 +31,206 @@
 .leaving  { animation: glitch-out 0.4s forwards; }
 
 /* ── Page-turn (chapter transition) ────────────────────────────── */
-@keyframes page-flip {
-  0%   { transform: perspective(1800px) rotateY(88deg);  opacity: 0; }
-  18%  { transform: perspective(1800px) rotateY(55deg);  opacity: 1; }
-  50%  { transform: perspective(1800px) rotateY(0deg);   opacity: 1; }
-  82%  { transform: perspective(1800px) rotateY(-55deg); opacity: 1; }
-  100% { transform: perspective(1800px) rotateY(-88deg); opacity: 0; }
+/* Architecture:
+     - .page-flip-root           full-screen overlay, hides the underlying UI
+     - .page-flip-backdrop       cardboard "open spread" with a center spine,
+                                 fades in at start, fades back out at the end
+     - .page-flip-stage          perspective container for the flipping leaf
+     - .page-flip-sheet          half-width leaf hinged on the spine; rotates
+                                 around its inner edge so it sweeps across the
+                                 spread like a real book page
+     - .page-flip-face           front and back faces, backface-visibility
+                                 hidden so the back appears once past 90deg
+
+   Two stages share the same 900ms timeline as the existing turnToChapter()
+   coordinator (see gameStore: 0–450ms cover, swap at 450ms, 450–900ms reveal). */
+
+.page-flip-root {
+  perspective: 2400px;
+  perspective-origin: 50% 50%;
 }
 
-/* Shadow pulse that reinforces the flip — darker when page is flat */
-@keyframes page-flip-shadow {
-  0%, 100% { box-shadow: 0 0 0 rgba(0,0,0,0); }
-  50%      { box-shadow: 0 30px 80px rgba(40,25,5,0.55),
-                         0 0 0 1px rgba(40,25,5,0.25) inset; }
+.page-flip-backdrop {
+  animation: page-flip-backdrop 900ms ease-out forwards;
+}
+@keyframes page-flip-backdrop {
+  0%        { opacity: 0; }
+  18%, 82%  { opacity: 1; }
+  100%      { opacity: 0; }
+}
+
+/* Center spine — a concentrated shadow plus a thin inner highlight to suggest
+   binding glue catching light. Persists for the whole flip so the spread reads
+   as one continuous open book rather than two disconnected halves. */
+.page-spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 28px;
+  transform: translateX(-50%);
+  background:
+    linear-gradient(90deg,
+      rgba(0,0,0,0) 0%,
+      rgba(20,12,4,0.30) 35%,
+      rgba(0,0,0,0.55) 50%,
+      rgba(20,12,4,0.30) 65%,
+      rgba(0,0,0,0) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Each half of the spread = one full-bleed page. Notebook-style gridlines
+   plus a sheen toward the spine so the page reads as bound paper rather
+   than a flat rectangle. */
+.page-half,
+.chapter-page-blank {
+  background-color: #f4efe2;
+  background-image:
+    linear-gradient(#e6dfca 0.08em, transparent 0.08em);
+  background-size: 100% 1.7em;
+}
+.page-half--left::after,
+.page-half--right::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 60px;
+  pointer-events: none;
+  z-index: 4;
+}
+/* Spine-side shadow on each page so the gutter feels deep */
+.page-half--left::after {
+  right: 0;
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0) 0%,
+    rgba(40,25,5,0.18) 70%,
+    rgba(40,25,5,0.32) 100%);
+}
+.page-half--right::after {
+  left: 0;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,0) 0%,
+    rgba(40,25,5,0.18) 70%,
+    rgba(40,25,5,0.32) 100%);
+}
+
+/* Chapter "title page" content. Sits inside one half of the spread. */
+.chapter-page {
+  color: #2a1f10;
+}
+.chapter-page .ink-bleed {
+  text-shadow:
+    0 0 1px rgba(40, 25, 5, 0.15),
+    0 1px 0 rgba(255, 250, 235, 0.4);
+}
+
+.page-flip-stage {
+  transform-style: preserve-3d;
 }
 
 .page-flip-sheet {
-  animation: page-flip 900ms cubic-bezier(0.55, 0.05, 0.35, 1) forwards,
-             page-flip-shadow 900ms ease-in-out forwards;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
   transform-style: preserve-3d;
-  backface-visibility: hidden;
-  will-change: transform, opacity;
+  will-change: transform;
 }
 
-/* A thin vertical crease to sell the "folded page" reading */
-.page-flip-crease {
+/* Forward turn (next chapter): leaf starts on the right page, hinges on the
+   spine at its left edge, and sweeps to the left. Rotation is a single
+   continuous arc (no translateZ / rotateZ) so the leaf stays glued to the
+   spine throughout — any in-plane translate would drift after rotateY because
+   CSS transforms compose in chain order. Opacity rides on its own track so
+   the fade-out at the very end doesn't break the rotation easing. */
+.page-flip-stage.is-forward .page-flip-sheet {
+  left: 50%;
+  transform-origin: left center;
+  animation:
+    page-flip-rotate-forward 900ms cubic-bezier(0.55, 0.05, 0.45, 0.95) forwards,
+    page-flip-fade           900ms linear forwards;
+}
+/* Backward turn (prev chapter): mirror — left page hinges on its right edge. */
+.page-flip-stage.is-backward .page-flip-sheet {
+  left: 0;
+  transform-origin: right center;
+  animation:
+    page-flip-rotate-backward 900ms cubic-bezier(0.55, 0.05, 0.45, 0.95) forwards,
+    page-flip-fade            900ms linear forwards;
+}
+
+@keyframes page-flip-rotate-forward {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(-180deg); }
+}
+@keyframes page-flip-rotate-backward {
+  from { transform: rotateY(0deg); }
+  to   { transform: rotateY(180deg); }
+}
+/* Stay fully opaque almost the entire turn; only the last 12% melts away so
+   the unmount of the overlay isn't a visible snap. */
+@keyframes page-flip-fade {
+  0%, 88% { opacity: 1; }
+  100%    { opacity: 0; }
+}
+
+.page-flip-face {
   position: absolute;
-  top: 0; bottom: 0; left: 50%;
-  width: 1px;
-  background: linear-gradient(180deg,
-    rgba(40,25,5,0) 0%,
-    rgba(40,25,5,0.25) 15%,
-    rgba(40,25,5,0.35) 50%,
-    rgba(40,25,5,0.25) 85%,
-    rgba(40,25,5,0) 100%);
+  inset: 0;
+  backface-visibility: hidden;
+  box-shadow:
+    0 14px 32px rgba(40, 25, 5, 0.32),
+    0 0 0 1px rgba(40, 25, 5, 0.18) inset;
+}
+.page-flip-back {
+  transform: rotateY(180deg);
+}
+
+/* A leading-edge "curl" — gradient stripe on the outer edge of each face that
+   approximates the soft shadow a lifting page casts on itself. */
+.page-flip-curl {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 14%;
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,0.10) 55%,
+    rgba(0,0,0,0.32) 100%);
   pointer-events: none;
+}
+/* Back face is mirrored so its outer edge sits on the opposite side. */
+.page-flip-curl--back {
+  right: auto;
+  left: 0;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,0.10) 55%,
+    rgba(0,0,0,0.32) 100%);
+}
+
+.page-flip-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(40, 25, 5, 0.45);
+  font-size: 1.25rem;
+  user-select: none;
+}
+.page-flip-label > span {
+  border-top: 1px solid rgba(40, 25, 5, 0.30);
+  border-bottom: 1px solid rgba(40, 25, 5, 0.30);
+  padding: 0.4rem 1.2rem;
+  transform: rotate(-1.2deg);
+  letter-spacing: 0.18em;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .page-flip-backdrop,
   .page-flip-sheet { animation: none; opacity: 1; transform: none; }
 }
 

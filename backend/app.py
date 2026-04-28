@@ -185,9 +185,16 @@ def get_ending_image(story_id: str):
 
 @app.route("/api/reset", methods=["POST"])
 def reset():
-    global engine, logger, claude, _claude_error
+    """
+    Reset the session back to the FIRST chapter (lowest chapter number),
+    not whatever chapter happened to be loaded last. The frontend uses this
+    for `Initialize Sequence` and the Restart menu — both expect a clean
+    chapter-1 start regardless of where the previous session ended up.
+    """
+    global engine, logger, claude, _claude_error, _current_story
 
     with _lock:
+        _current_story = load_default_story()
         engine, logger, claude, _claude_error = _init_game(_current_story)
         return jsonify({"status": "ok", "state": make_state()})
 

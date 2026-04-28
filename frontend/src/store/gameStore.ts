@@ -46,6 +46,9 @@ interface GameStore {
 
   // Page-turn transition
   isPageTurning: boolean
+  pageTurnDirection: 'forward' | 'backward'
+  pageTurnFromStoryId: string | null
+  pageTurnToStoryId: string | null
   turnToChapter: (storyId: string) => Promise<void>
 
   // Actions
@@ -56,7 +59,6 @@ interface GameStore {
   clearPatchError: () => void
   loadStory: (storyId: string) => Promise<void>
   resetGame: () => Promise<void>
-  restoreFromCache: () => Promise<boolean>
   clearAndRestart: () => Promise<void>
   addSysMsg: (text: string) => void
 }
@@ -65,21 +67,15 @@ let _id = 0
 const nextId = () => ++_id
 
 const COMPLETED_LS_KEY = 'unc.completedChapters'
-const GAME_CACHE_KEY = 'unc.gameCache'
-const GAME_CACHE_TTL_MS = 30 * 60 * 1000 // 30 minutes — sliding window
-const GAME_CACHE_VERSION = 1
 
-interface CachedGame {
-  v: number
-  ts: number
-  screen: 'start' | 'game' | 'ending'
-  gameState: GameState | null
-  completedChapters: string[]
-  selectedEventId: string | null
-  messages: DialogueMessage[]
-  msgCounter: number
-  chapterStates: Record<string, GameState>
-  totalScore: number
+// Legacy cross-session cache key — we no longer write or read it, but old
+// installs may still have an entry sitting in localStorage from before. Wipe
+// it once on module load so a stale dump can't influence future behavior.
+const LEGACY_GAME_CACHE_KEY = 'unc.gameCache'
+try {
+  localStorage.removeItem(LEGACY_GAME_CACHE_KEY)
+} catch {
+  // storage unavailable — nothing to clean up
 }
 
 function loadCompletedChapters(): string[] {
@@ -100,43 +96,6 @@ function saveCompletedChapters(ids: string[]) {
     // storage unavailable — progress just won't persist across reloads
   }
 }
-
-function readGameCache(): CachedGame | null {
-  try {
-    const raw = localStorage.getItem(GAME_CACHE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedGame
-    if (!parsed || parsed.v !== GAME_CACHE_VERSION) return null
-    if (typeof parsed.ts !== 'number') return null
-    if (Date.now() - parsed.ts > GAME_CACHE_TTL_MS) {
-      localStorage.removeItem(GAME_CACHE_KEY)
-      return null
-    }
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-function writeGameCache(cache: CachedGame) {
-  try {
-    localStorage.setItem(GAME_CACHE_KEY, JSON.stringify(cache))
-  } catch {
-    // storage unavailable — silently skip
-  }
-}
-
-function clearGameCache() {
-  try {
-    localStorage.removeItem(GAME_CACHE_KEY)
-  } catch {
-    // ignore
-  }
-}
-
-// Suppress cache writes while we're applying restored state to avoid clobbering
-// the cache with intermediate sync states.
-let _suspendPersist = false
 
 export const useGameStore = create<GameStore>((set, get) => ({
   screen: 'start',
@@ -172,13 +131,28 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   isPageTurning: false,
+  pageTurnDirection: 'forward',
+  pageTurnFromStoryId: null,
+  pageTurnToStoryId: null,
   turnToChapter: async (storyId) => {
     if (get().isPageTurning) return
-    set({ isPageTurning: true })
 
     // Snapshot the chapter we're leaving so a later return brings the player
     // back to whatever choices they had already committed.
     const cur = get().gameState
+    const stories = get().stories
+    const curMeta = cur ? stories.find((s) => s.id === cur.story_id) : null
+    const tgtMeta = stories.find((s) => s.id === storyId)
+    const direction: 'forward' | 'backward' =
+      curMeta && tgtMeta && tgtMeta.chapter < curMeta.chapter ? 'backward' : 'forward'
+
+    set({
+      isPageTurning: true,
+      pageTurnDirection: direction,
+      pageTurnFromStoryId: cur?.story_id ?? null,
+      pageTurnToStoryId: storyId,
+    })
+
     if (cur && cur.story_id !== storyId) {
       set((s) => ({
         chapterStates: { ...s.chapterStates, [cur.story_id]: cur },
@@ -191,7 +165,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     await get().loadStory(storyId)
     // Phase 3: the page rotates away, revealing the new chapter (450–900ms).
     await new Promise((r) => setTimeout(r, 450))
-    set({ isPageTurning: false })
+    set({
+      isPageTurning: false,
+      pageTurnFromStoryId: null,
+      pageTurnToStoryId: null,
+    })
   },
 
   addSysMsg: (text) =>
@@ -367,113 +345,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  restoreFromCache: async () => {
-    const cache = readGameCache()
-    if (!cache) return false
-    if (!cache.gameState || cache.screen === 'start') {
-      // Nothing meaningful to restore — drop the stale entry.
-      clearGameCache()
-      return false
-    }
-
-    const storyId = cache.gameState.story_id
-    const choices = cache.gameState.choices_made ?? []
-
-    _suspendPersist = true
-    try {
-      // 1) Optimistically rehydrate the UI from cache so the user sees their
-      //    progress without waiting on the backend round-trip.
-      _id = Math.max(_id, cache.msgCounter || 0)
-      set({
-        screen: cache.screen,
-        gameState: cache.gameState,
-        completedChapters: cache.completedChapters ?? get().completedChapters,
-        selectedEventId: cache.selectedEventId,
-        messages: cache.messages ?? [],
-        chapterStates: cache.chapterStates ?? {},
-        totalScore: cache.totalScore ?? 0,
-        loading: true,
-      })
-
-      // 2) Resync backend: load the same story, then replay each choice so the
-      //    server-side engine ends up in the same state the cache reflects.
-      try {
-        const stories = await api.getStories()
-        const { state: loaded } = await api.loadStory(storyId)
-        let live: GameState = loaded
-        for (const c of choices) {
-          try {
-            const { state: next } = await api.submitChoice(c.event_id, c.choice_id)
-            live = next
-          } catch {
-            // Skip a choice that no longer applies — we still keep the cached UI.
-          }
-        }
-        set({ stories, gameState: live, loading: false })
-      } catch {
-        set({ loading: false })
-      }
-    } finally {
-      _suspendPersist = false
-      // Refresh the timestamp now that we've successfully resumed.
-      persistNow(get())
-    }
-    return true
-  },
-
   clearAndRestart: async () => {
-    clearGameCache()
     saveCompletedChapters([])
-    _suspendPersist = true
+    set({
+      screen: 'start',
+      gameState: null,
+      selectedEventId: null,
+      messages: [],
+      completedChapters: [],
+      chapterStates: {},
+      totalScore: 0,
+      isPatching: false,
+      patchingPath: null,
+      patchError: null,
+      error: null,
+    })
     try {
-      set({
-        screen: 'start',
-        gameState: null,
-        selectedEventId: null,
-        messages: [],
-        completedChapters: [],
-        chapterStates: {},
-        totalScore: 0,
-        isPatching: false,
-        patchingPath: null,
-        patchError: null,
-        error: null,
-      })
-      try {
-        await api.reset()
-      } catch {
-        // backend reset is best-effort; the next initGame() will retry.
-      }
-    } finally {
-      _suspendPersist = false
+      await api.reset()
+    } catch {
+      // backend reset is best-effort; the next initGame() will retry.
     }
   },
 }))
 
-function persistNow(s: GameStore) {
-  if (_suspendPersist) return
-  // Don't bother caching the empty start screen.
-  if (s.screen === 'start' && !s.gameState) return
-  writeGameCache({
-    v: GAME_CACHE_VERSION,
-    ts: Date.now(),
-    screen: s.screen,
-    gameState: s.gameState,
-    completedChapters: s.completedChapters,
-    selectedEventId: s.selectedEventId,
-    messages: s.messages,
-    msgCounter: _id,
-    chapterStates: s.chapterStates,
-    totalScore: s.totalScore,
-  })
-}
-
-// Save the relevant slices on every change. The TTL is sliding — each write
-// refreshes the timestamp, so an active session never expires mid-play.
+// Mirror the live gameState into chapterStates so on-chapter activity (new
+// choices, patches) keeps the per-chapter snapshot fresh even without a
+// subsequent turnToChapter(). The map itself is in-memory only — closing
+// the tab or refreshing intentionally drops it so the player always reopens
+// at chapter 1, not their last position.
 useGameStore.subscribe((state, prev) => {
-  // Mirror the live gameState into chapterStates so on-chapter activity (new
-  // choices, patches) keeps the per-chapter snapshot fresh even without a
-  // subsequent turnToChapter().
   if (
     state.gameState &&
     state.gameState !== prev.gameState &&
@@ -483,19 +383,5 @@ useGameStore.subscribe((state, prev) => {
     useGameStore.setState({
       chapterStates: { ...state.chapterStates, [sid]: state.gameState },
     })
-    return // the resulting state change will fire this subscriber again
   }
-
-  if (
-    state.screen === prev.screen &&
-    state.gameState === prev.gameState &&
-    state.completedChapters === prev.completedChapters &&
-    state.selectedEventId === prev.selectedEventId &&
-    state.messages === prev.messages &&
-    state.chapterStates === prev.chapterStates &&
-    state.totalScore === prev.totalScore
-  ) {
-    return
-  }
-  persistNow(state)
 })
