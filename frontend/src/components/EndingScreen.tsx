@@ -111,11 +111,7 @@ export default function EndingScreen() {
         <>
           <div className="absolute inset-0 flex flex-col items-center justify-center
                           px-6 py-10 pointer-events-none">
-            <span className="font-headline italic text-white/95 text-5xl md:text-6xl
-                             tracking-[0.35em] ending-text-anim drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]">
-              END
-            </span>
-            <h2 className="mt-5 font-headline italic text-white/90 text-xl md:text-2xl
+            <h2 className="font-headline italic text-white/95 text-2xl md:text-3xl
                            tracking-widest text-center ending-text-anim
                            drop-shadow-[0_2px_6px_rgba(0,0,0,0.85)]">
               {ending.title}

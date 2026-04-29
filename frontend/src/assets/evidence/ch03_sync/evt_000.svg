@@ -1,43 +1,68 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="The Weight of Silence - all 16 monitors silenced, hyper-real fluorescent light, sharp edges">
   <defs>
-    <radialGradient id="g3a" cx="50%" cy="50%" r="75%">
-      <stop offset="0%" stop-color="#0a0510"/>
-      <stop offset="100%" stop-color="#02000a"/>
+    <radialGradient id="bg30" cx="50%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#22282c"/>
+      <stop offset="100%" stop-color="#0e1216"/>
     </radialGradient>
-    <filter id="n3a"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.2 0 0 0 0 0.12 0 0 0 0 0.32 0 0 0 0.22 0"/></filter>
+    <linearGradient id="phos30" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#cfd6db"/>
+      <stop offset="100%" stop-color="#5e676d"/>
+    </linearGradient>
+    <filter id="grain30"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0.10 0"/></filter>
   </defs>
-  <rect width="400" height="400" fill="url(#g3a)"/>
-  <!-- dead monitors: 4x4 matrix, all dark -->
-  <g stroke="#1a1020" stroke-width="1.2" fill="#05030a">
-    <rect x="30"  y="30"  width="80" height="64"/>
-    <rect x="120" y="30"  width="80" height="64"/>
-    <rect x="210" y="30"  width="80" height="64"/>
-    <rect x="300" y="30"  width="70" height="64"/>
-    <rect x="30"  y="108" width="80" height="64"/>
-    <rect x="120" y="108" width="80" height="64"/>
-    <rect x="210" y="108" width="80" height="64"/>
-    <rect x="300" y="108" width="70" height="64"/>
-    <rect x="30"  y="186" width="80" height="64"/>
-    <rect x="120" y="186" width="80" height="64"/>
-    <rect x="210" y="186" width="80" height="64"/>
-    <rect x="300" y="186" width="70" height="64"/>
-    <rect x="30"  y="264" width="80" height="64"/>
-    <rect x="120" y="264" width="80" height="64"/>
-    <rect x="210" y="264" width="80" height="64"/>
-    <rect x="300" y="264" width="70" height="64"/>
+  <rect width="512" height="512" fill="url(#bg30)"/>
+  <rect width="512" height="512" filter="url(#grain30)" opacity="0.35"/>
+
+  <!-- viscous overhead light -->
+  <rect x="0" y="0" width="512" height="80" fill="#f4ecd7" opacity="0.06"/>
+  <rect x="0" y="0" width="512" height="40" fill="#f4ecd7" opacity="0.10"/>
+
+  <!-- monitor wall -->
+  <g transform="translate(56,90)">
+    <rect width="400" height="288" fill="#0a0d0f" stroke="#5b676e" stroke-width="2"/>
+    <g fill="url(#phos30)" opacity="0.55">
+      <rect x="6"   y="6"   width="92" height="64"/>
+      <rect x="104" y="6"   width="92" height="64"/>
+      <rect x="202" y="6"   width="92" height="64"/>
+      <rect x="300" y="6"   width="92" height="64"/>
+      <rect x="6"   y="76"  width="92" height="64"/>
+      <rect x="104" y="76"  width="92" height="64"/>
+      <rect x="202" y="76"  width="92" height="64"/>
+      <rect x="300" y="76"  width="92" height="64"/>
+      <rect x="6"   y="146" width="92" height="64"/>
+      <rect x="104" y="146" width="92" height="64"/>
+      <rect x="202" y="146" width="92" height="64"/>
+      <rect x="300" y="146" width="92" height="64"/>
+      <rect x="6"   y="216" width="92" height="64"/>
+      <rect x="104" y="216" width="92" height="64"/>
+      <rect x="202" y="216" width="92" height="64"/>
+      <rect x="300" y="216" width="92" height="64"/>
+    </g>
+    <!-- crisp seam highlight (hyper-real) -->
+    <g stroke="#f4ecd7" stroke-width="0.6" opacity="0.55">
+      <line x1="6" y1="6" x2="392" y2="6"/>
+      <line x1="6" y1="76" x2="392" y2="76"/>
+      <line x1="6" y1="146" x2="392" y2="146"/>
+      <line x1="6" y1="216" x2="392" y2="216"/>
+      <line x1="6" y1="280" x2="392" y2="280"/>
+      <line x1="6" y1="6" x2="6" y2="280"/>
+      <line x1="98" y1="6" x2="98" y2="280"/>
+      <line x1="196" y1="6" x2="196" y2="280"/>
+      <line x1="294" y1="6" x2="294" y2="280"/>
+      <line x1="392" y1="6" x2="392" y2="280"/>
+    </g>
   </g>
-  <!-- subtle purple rim-light creeping in from the edges -->
-  <rect x="0" y="0" width="400" height="400"
-        fill="none" stroke="#8040c0" stroke-width="2" opacity="0.25"/>
-  <rect x="0" y="0" width="400" height="8" fill="#8040c0" opacity="0.25"/>
-  <rect x="0" y="392" width="400" height="8" fill="#8040c0" opacity="0.28"/>
-  <!-- hallway bleed from the right edge (UV disinfection light) -->
-  <rect x="370" y="0" width="30" height="400" fill="#a060e0" opacity="0.18"/>
-  <rect x="380" y="0" width="20" height="400" fill="#c080ff" opacity="0.20"/>
-  <!-- single flickering pixel still holding on -->
-  <circle cx="258" cy="230" r="1.6" fill="#e0a0ff" opacity="0.9"/>
-  <!-- signal-lost caption line -->
-  <text x="200" y="360" text-anchor="middle" font-family="monospace" font-size="10" fill="#6040a0" opacity="0.7" letter-spacing="4">— NO SIGNAL —</text>
-  <text x="200" y="378" text-anchor="middle" font-family="monospace" font-size="10" fill="#a070d0" opacity="0.7">HUB · 02:15:00</text>
-  <rect width="400" height="400" filter="url(#n3a)"/>
+
+  <!-- silence: NO SIGNAL block (audio waveform flatline) -->
+  <g transform="translate(56,396)">
+    <rect width="400" height="60" fill="#0a0d0f" stroke="#5b676e" stroke-width="1.5"/>
+    <line x1="6" y1="30" x2="394" y2="30" stroke="#a6151c" stroke-width="2"/>
+    <text x="200" y="20" text-anchor="middle" font-family="monospace" font-size="11" fill="#a6151c" font-weight="bold">AUDIO IN — FLATLINE</text>
+    <text x="200" y="50" text-anchor="middle" font-family="monospace" font-size="10" fill="#9aa6ae">02:15:00 / NOISE FLOOR: 0 dB</text>
+  </g>
+
+  <!-- timestamp -->
+  <text x="492" y="36" text-anchor="end" font-family="monospace" font-size="11" fill="#9aa6ae">02:15</text>
+  <!-- caption -->
+  <text x="20" y="498" font-family="monospace" font-size="11" fill="#8aa7b3" opacity="0.85">CH03 / EVT_000 — SOUND DROPS TO ZERO</text>
 </svg>

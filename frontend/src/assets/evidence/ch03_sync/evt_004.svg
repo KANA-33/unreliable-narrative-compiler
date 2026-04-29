@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Archive Endpoint - Reality Overwritten stamp">
+  <defs>
+    <linearGradient id="paper3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4ecd7"/>
+      <stop offset="100%" stop-color="#d6c89a"/>
+    </linearGradient>
+    <filter id="paperGrain3"><feTurbulence baseFrequency="0.85" numOctaves="3"/><feColorMatrix values="0 0 0 0 0.32 0 0 0 0 0.22 0 0 0 0 0.08 0 0 0 0.18 0"/></filter>
+    <filter id="glitch"><feTurbulence baseFrequency="0.02 0.4" numOctaves="1"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.20 0"/></filter>
+  </defs>
+  <rect width="512" height="512" fill="#1c1410"/>
+  <g transform="translate(40,40)">
+    <rect width="432" height="432" fill="url(#paper3)"/>
+    <rect width="432" height="432" filter="url(#paperGrain3)" opacity="0.55"/>
+    <!-- corruption bands across the page -->
+    <rect width="432" height="432" filter="url(#glitch)" opacity="0.4"/>
+    <g opacity="0.5">
+      <rect x="0" y="156" width="432" height="6" fill="#a6151c"/>
+      <rect x="0" y="220" width="432" height="2" fill="#a6151c"/>
+      <rect x="0" y="304" width="432" height="4" fill="#a6151c"/>
+    </g>
+
+    <line x1="32" y1="60" x2="400" y2="60" stroke="#5a4a30" stroke-width="2"/>
+    <text x="32" y="50" font-family="monospace" font-size="14" fill="#3a2a14" font-weight="bold">ARCHIVE #003-SYNC</text>
+    <text x="400" y="50" text-anchor="end" font-family="monospace" font-size="12" fill="#3a2a14">FILE 091-UN</text>
+
+    <g font-family="monospace" font-size="11" fill="#3a2a14">
+      <text x="32" y="92">SILENCE EVENT       . . . . . . . . . LOGGED</text>
+      <text x="32" y="116">PHYSICAL DISCONNECT . . . . . . . . . CONFIRMED</text>
+      <text x="32" y="140">CREDENTIAL CONFLICT . . . . . . . . . ████████</text>
+      <text x="32" y="164">FINAL CALIBRATION   . . . . . . . . . COMMITTED</text>
+      <text x="32" y="200">— REDUNDANT ENTITY: RESOLVED</text>
+      <text x="32" y="224">— SINGLE-ARCHIVE INTEGRITY: ENFORCED</text>
+    </g>
+    <line x1="32" y1="252" x2="400" y2="252" stroke="#5a4a30" stroke-width="1" stroke-dasharray="3 3"/>
+
+    <!-- Stamp: REALITY OVERWRITTEN -->
+    <g transform="translate(72,300) rotate(-8)">
+      <rect x="0" y="0" width="296" height="92" fill="none" stroke="#a6151c" stroke-width="4" rx="4"/>
+      <rect x="6" y="6" width="284" height="80" fill="none" stroke="#a6151c" stroke-width="1.5" rx="2"/>
+      <text x="148" y="46" text-anchor="middle" font-family="serif" font-size="20" font-weight="bold" fill="#a6151c">REALITY</text>
+      <text x="148" y="74" text-anchor="middle" font-family="serif" font-size="20" font-weight="bold" fill="#a6151c">OVERWRITTEN</text>
+    </g>
+    <g fill="#a6151c" opacity="0.55">
+      <circle cx="120" cy="318" r="1"/>
+      <circle cx="280" cy="340" r="1.5"/>
+      <circle cx="160" cy="386" r="1"/>
+      <circle cx="320" cy="392" r="1.2"/>
+    </g>
+
+    <text x="32" y="412" font-family="monospace" font-size="11" fill="#3a2a14">OPERATOR: ███████████</text>
+    <text x="400" y="412" text-anchor="end" font-family="serif" font-style="italic" font-size="14" fill="#a6151c">— compile end —</text>
+  </g>
+</svg>

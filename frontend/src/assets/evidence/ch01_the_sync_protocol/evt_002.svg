@@ -1,26 +1,55 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="First Alignment - hand nudges the pen, pen rolls and impacts the floor">
   <defs>
-    <radialGradient id="g2" cx="50%" cy="60%" r="80%">
-      <stop offset="0%" stop-color="#3a2a1a"/>
-      <stop offset="100%" stop-color="#0a0806"/>
+    <radialGradient id="b2" cx="50%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#1c2226"/>
+      <stop offset="100%" stop-color="#06080a"/>
     </radialGradient>
-    <filter id="n2"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3"/><feColorMatrix values="0 0 0 0 0.4 0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0.24 0"/></filter>
+    <filter id="grain2"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0.18 0"/></filter>
   </defs>
-  <rect width="400" height="400" fill="url(#g2)"/>
-  <g transform="translate(200 200) rotate(155)" opacity="0.9">
-    <rect x="-70" y="-90" width="140" height="80" rx="4" fill="#2a1a10" stroke="#5a3a22" stroke-width="1.2"/>
-    <rect x="-62" y="-82" width="124" height="60" fill="#111" stroke="#7a5a3a" stroke-width="0.6"/>
-    <rect x="-50" y="-75" width="100" height="45" fill="#1a1a1a"/>
-    <rect x="-20" y="-10" width="40" height="4" fill="#3a2a1a"/>
-    <ellipse cx="0" cy="6" rx="30" ry="5" fill="#2a1a10"/>
-    <rect x="-55" y="-72" width="30" height="18" fill="#5070a0" opacity="0.7"/>
-    <line x1="-60" y1="-30" x2="60" y2="-40" stroke="#f0c080" stroke-width="0.6" opacity="0.45"/>
+  <rect width="512" height="512" fill="url(#b2)"/>
+  <rect width="512" height="512" filter="url(#grain2)" opacity="0.55"/>
+
+  <!-- Desk -->
+  <rect x="0" y="240" width="512" height="40" fill="#3a2a18"/>
+  <rect x="0" y="280" width="512" height="232" fill="#1c1612"/>
+  <!-- Floor -->
+  <rect x="0" y="430" width="512" height="82" fill="#0d0a07"/>
+  <line x1="0" y1="430" x2="512" y2="430" stroke="#2a1a0a" stroke-width="2"/>
+
+  <!-- Hand silhouette nudging pen -->
+  <g transform="translate(70,170)">
+    <path d="M0 60 q40 -36 86 -22 q22 6 36 24 q-12 8 -28 8 l-58 6 q-22 -2 -36 -16 z" fill="#5a4630"/>
+    <!-- index finger pushing -->
+    <path d="M122 62 q22 -2 38 6 l-2 12 q-22 4 -40 -2 z" fill="#5a4630"/>
+    <!-- cuff -->
+    <rect x="-8" y="50" width="22" height="22" fill="#1f1610"/>
   </g>
-  <g stroke="#a07040" stroke-width="0.5" opacity="0.4">
-    <path d="M40 120 Q200 150 360 100" fill="none"/>
-    <path d="M30 180 Q200 220 370 170" fill="none"/>
+
+  <!-- Red pen at the edge, falling off -->
+  <g transform="translate(245,238) rotate(8)">
+    <rect width="120" height="10" rx="3" fill="#c2261c"/>
+    <rect width="18" height="10" rx="3" fill="#0d0d0a"/>
+    <polygon points="120,0 130,5 120,10" fill="#cfcfcf"/>
   </g>
-  <circle cx="100" cy="330" r="44" fill="#000" opacity="0.35"/>
-  <text x="200" y="380" text-anchor="middle" font-family="monospace" font-size="10" fill="#c4a070" opacity="0.65">ANOMALY · G-INVERSION</text>
-  <rect width="400" height="400" filter="url(#n2)"/>
+  <!-- Motion arc to floor -->
+  <path d="M370 246 Q420 320 388 420" fill="none" stroke="#c2261c" stroke-width="2" stroke-dasharray="6 6" opacity="0.8"/>
+  <!-- Pen hitting floor -->
+  <g transform="translate(326,420) rotate(72)">
+    <rect width="120" height="10" rx="3" fill="#c2261c"/>
+    <rect width="18" height="10" rx="3" fill="#0d0d0a"/>
+    <polygon points="120,0 130,5 120,10" fill="#cfcfcf"/>
+  </g>
+  <!-- Impact lines -->
+  <g stroke="#d6c08a" stroke-width="2" opacity="0.85" fill="none" stroke-linecap="round">
+    <path d="M388 420 l -16 -14"/>
+    <path d="M388 420 l 18 -10"/>
+    <path d="M388 420 l 4 -22"/>
+    <path d="M388 420 l 22 4"/>
+  </g>
+  <text x="412" y="412" font-family="monospace" font-size="13" fill="#d6c08a" font-weight="bold">CLICK</text>
+
+  <!-- Caption -->
+  <g font-family="monospace" font-size="11" fill="#8aa7b3" opacity="0.85">
+    <text x="20" y="500">CH01 / EVT_002 — ALIGNMENT EXECUTED</text>
+  </g>
 </svg>

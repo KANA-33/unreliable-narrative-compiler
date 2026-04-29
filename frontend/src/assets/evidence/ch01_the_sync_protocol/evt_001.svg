@@ -1,26 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Monitor Anomaly - screen 10 shows pen mid-fall, but the real desk pen is untouched">
   <defs>
-    <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#2a1f14"/>
-      <stop offset="100%" stop-color="#0d0906"/>
+    <radialGradient id="b1" cx="50%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#1c2226"/>
+      <stop offset="100%" stop-color="#06080a"/>
+    </radialGradient>
+    <linearGradient id="phos1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#bdd9e2"/>
+      <stop offset="100%" stop-color="#445e6a"/>
     </linearGradient>
-    <filter id="n1"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.35 0 0 0 0 0.28 0 0 0 0 0.18 0 0 0 0.22 0"/></filter>
+    <filter id="grain1"><feTurbulence baseFrequency="0.9" numOctaves="2"/><feColorMatrix values="0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0 0.05 0 0 0 0.18 0"/></filter>
+    <filter id="scan1"><feTurbulence baseFrequency="0.02 0.4" numOctaves="1"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/></filter>
   </defs>
-  <rect width="400" height="400" fill="url(#g1)"/>
-  <path d="M0 250 Q200 235 400 255 L400 400 L0 400 Z" fill="#3e2a18" opacity="0.85"/>
-  <g transform="translate(160 270) rotate(-18)">
-    <rect x="0" y="0" width="160" height="10" rx="5" fill="#b01a1a"/>
-    <rect x="0" y="0" width="160" height="4" rx="2" fill="#e03a3a"/>
-    <polygon points="160,0 180,5 160,10" fill="#f0f0f0"/>
-    <rect x="30" y="2" width="40" height="6" fill="#7a0e0e"/>
+  <rect width="512" height="512" fill="url(#b1)"/>
+  <rect width="512" height="512" filter="url(#grain1)" opacity="0.55"/>
+
+  <!-- Top half: monitor No.10 close-up -->
+  <g transform="translate(40,30)">
+    <rect width="432" height="200" rx="6" fill="#0d1115" stroke="#3d525c" stroke-width="3"/>
+    <rect x="6" y="6" width="420" height="188" fill="url(#phos1)"/>
+    <rect x="6" y="6" width="420" height="188" filter="url(#scan1)" opacity="0.6"/>
+    <!-- desk seen on screen -->
+    <rect x="20" y="120" width="392" height="68" fill="#283c44"/>
+    <!-- pen mid-fall on screen -->
+    <g transform="translate(180,90) rotate(28)">
+      <rect width="92" height="8" rx="2" fill="#c2261c"/>
+      <rect width="16" height="8" rx="2" fill="#0d0d0a"/>
+    </g>
+    <!-- motion lines -->
+    <g stroke="#c2261c" stroke-width="2" opacity="0.7" fill="none">
+      <path d="M180 86 q 10 6 6 18"/>
+      <path d="M196 84 q 10 8 8 22"/>
+    </g>
+    <text x="20" y="28" font-family="monospace" font-size="13" fill="#1a262c" font-weight="bold">REC ●  CAM 10</text>
+    <text x="412" y="28" text-anchor="end" font-family="monospace" font-size="13" fill="#1a262c">01:14:22</text>
+    <text x="216" y="180" text-anchor="middle" font-family="monospace" font-size="14" fill="#1a262c" font-weight="bold">PEN — DROPPED</text>
   </g>
-  <circle cx="235" cy="295" r="18" fill="#8a1010" opacity="0.55"/>
-  <circle cx="235" cy="295" r="8" fill="#c42424" opacity="0.7"/>
-  <g stroke="#5a3a1a" stroke-width="0.4" opacity="0.6">
-    <line x1="0" y1="280" x2="400" y2="290"/>
-    <line x1="0" y1="310" x2="400" y2="320"/>
-    <line x1="0" y1="340" x2="400" y2="348"/>
+
+  <!-- Divider with red marker -->
+  <line x1="40" y1="248" x2="472" y2="248" stroke="#c2261c" stroke-width="2" stroke-dasharray="6 6" opacity="0.85"/>
+  <text x="256" y="244" text-anchor="middle" font-family="monospace" font-size="12" fill="#c2261c" font-weight="bold">REALITY ≠ MONITOR</text>
+
+  <!-- Bottom half: real desk -->
+  <g transform="translate(40,266)">
+    <rect width="432" height="200" rx="2" fill="#1c1612" stroke="#3a2a18" stroke-width="2"/>
+    <rect width="432" height="14" fill="#2c1f12"/>
+    <!-- pen still on desk -->
+    <g transform="translate(150,90) rotate(-4)">
+      <rect width="124" height="10" rx="3" fill="#c2261c"/>
+      <rect width="20" height="10" rx="3" fill="#1c1c16"/>
+      <polygon points="124,0 134,5 124,10" fill="#cfcfcf"/>
+    </g>
+    <!-- shadow -->
+    <ellipse cx="210" cy="108" rx="60" ry="6" fill="#000" opacity="0.45"/>
+    <text x="20" y="36" font-family="monospace" font-size="13" fill="#9aa6ae">DESK / REAL</text>
   </g>
-  <text x="200" y="378" text-anchor="middle" font-family="monospace" font-size="10" fill="#c4a070" opacity="0.65">EXHIBIT · PEN (DROPPED)</text>
-  <rect width="400" height="400" filter="url(#n1)"/>
+
+  <!-- Manual page note: red-circled directive -->
+  <g transform="translate(296,316) rotate(-8)">
+    <rect width="156" height="120" fill="#f4ecd7"/>
+    <line x1="8" y1="20" x2="148" y2="20" stroke="#7a6a48" stroke-width="0.6"/>
+    <line x1="8" y1="40" x2="148" y2="40" stroke="#7a6a48" stroke-width="0.6"/>
+    <line x1="8" y1="60" x2="148" y2="60" stroke="#7a6a48" stroke-width="0.6"/>
+    <line x1="8" y1="80" x2="148" y2="80" stroke="#7a6a48" stroke-width="0.6"/>
+    <line x1="8" y1="100" x2="148" y2="100" stroke="#7a6a48" stroke-width="0.6"/>
+    <text x="78" y="58" text-anchor="middle" font-family="serif" font-style="italic" font-size="14" fill="#1c1410">Let reality mimic</text>
+    <text x="78" y="78" text-anchor="middle" font-family="serif" font-style="italic" font-size="14" fill="#1c1410">the monitor.</text>
+    <ellipse cx="78" cy="68" rx="74" ry="20" fill="none" stroke="#a6151c" stroke-width="2.5"/>
+  </g>
 </svg>
